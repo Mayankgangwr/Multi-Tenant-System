@@ -4,6 +4,7 @@ import ApiError from "./apiError";
 import { ITenantDocument } from "../models/tenant.model";
 import { IUserDocument } from "../models/user.model";
 import { ICourseDocument } from "../models/course.model";
+import { IBranchDocument } from "../models/branch.model";
 
 
 /**
@@ -99,6 +100,41 @@ export const buildCourseFilter = (
     if (query.status !== undefined) {
         if (query.status === "true") filter.status = true;
         else if (query.status === "false") filter.status = false;
+    }
+
+    return filter;
+};
+
+export const buildBranchFilter = (
+    query: Record<string, any>
+): FilterQuery<IBranchDocument> => {
+    const filter: FilterQuery<IBranchDocument> = {};
+
+    // Soft delete flag
+    filter.isDelete = false;
+    if (query.isDelete !== undefined) {
+        filter.isDelete = query.isDelete === "true";
+    }
+
+    // Filter by name (case-insensitive partial match)
+    if (query.name) {
+        filter.name = new RegExp(query.name, "i");
+    }
+
+    // Filter by location (case-insensitive partial match)
+    if (query.location) {
+        filter.location = new RegExp(query.location, "i");
+    }
+
+    // Filter by isMainBranch (boolean string)
+    if (query.isMainBranch !== undefined) {
+        if (query.isMainBranch === "true") filter.isMainBranch = true;
+        else if (query.isMainBranch === "false") filter.isMainBranch = false;
+    }
+
+    // Optional: filter by tenantId
+    if (query.tenantId) {
+        filter.tenantId = query.tenantId;
     }
 
     return filter;

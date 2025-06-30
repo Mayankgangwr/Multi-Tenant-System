@@ -3,7 +3,6 @@ import { asyncHandler } from "../utils/asyncHandler";
 import tenantService from "../services/tenant.service";
 import ApiError from "../utils/apiError";
 import { AuthRequest } from "../types/AuthResponse";
-import { primaryFilter } from "../utils/base-filter.util";
 
 export const insertTenant = asyncHandler(async (req: AuthRequest, res: Response) => {
     const tenant = await tenantService.create(req.body);

@@ -1,30 +1,25 @@
 import { Response, NextFunction } from "express";
 import { AuthRequest } from "../types/AuthResponse";
-import { UserRoles } from "../constants";
 import ApiError from "../utils/apiError";
-import tenantRepository from "../repositories/tenant.repository"; // Assumes a findById method exists
+import { UserRoles } from "../constants";
 
-export const tenantAccess = (roles?: UserRoles[]) => {
-    return async (req: AuthRequest, _: Response, next: NextFunction) => {
-        const user = req.user;
-        const tenantId = req.params.tenantId || req.params.id || req.body.tenantId;
+export const tenantAccess = async (req: AuthRequest, _: Response, next: NextFunction) => {
+    if (req.user?.role === UserRoles.SuperAdmin) return next();
+    const userTenantId = req.user?.tenantId?.toString();
+    const routeTenantId =
+        req.params.tenantId || req.body.tenantId || req.params.id;
 
-        if (!user) {
-            return next(ApiError.unauthorized("Authentication required."));
-        }
+    if (!userTenantId) {
+        return next(ApiError.unauthorized("Tenant information missing in token."));
+    }
 
-        if (roles && !roles.includes(user.role)) {
-            return next(ApiError.forbidden("Access denied: Role not permitted."));
-        }
+    if (!routeTenantId) {
+        return next(ApiError.badRequest("Missing tenant identifier in request."));
+    }
 
+    if (userTenantId !== routeTenantId) {
+        return next(ApiError.forbidden("Access denied: Invalid tenant."));
+    }
 
-        if (
-            user.role === UserRoles.SuperAdmin ||
-            (user.role === UserRoles.TenantAdmin && user.tenantId && user.tenantId.toString() === tenantId.toString())
-        ) {
-            return next();
-        }
-
-        return next(ApiError.forbidden("Access denied: Tenant or role mismatch."));
-    };
+    return next();
 };

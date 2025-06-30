@@ -5,48 +5,47 @@ import { createTenantSchema, updateTenantSchema } from "../validators/tenant.sch
 import { verifyToken } from "../middlewares/Auth.middleware";
 import { idParamSchema } from "../validators/IdParam.schema";
 import { UserRoles } from "../constants";
+import { authorizeRoles } from "../middlewares/Role.middleware";
 import { tenantAccess } from "../middlewares/tenant.middleware";
 
 const router = Router();
 
 router.post("/",
     verifyToken,
-    tenantAccess([UserRoles.SuperAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin]),
     validate({ body: createTenantSchema }),
     insertTenant
 );
 
 router.get("/",
     verifyToken,
-    tenantAccess([UserRoles.SuperAdmin]),
-    getSingleTenant);
-
-router.get("/list",
-    verifyToken,
-    tenantAccess([UserRoles.SuperAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin]),
     getAllTenants);
 
 router.get("/:id",
     verifyToken,
-    tenantAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    tenantAccess,
     validate({ params: idParamSchema }),
     getTenantById);
 
 router.patch("/:id",
     verifyToken,
-    tenantAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    tenantAccess,
     validate({ body: updateTenantSchema, params: idParamSchema }),
     updateTenant);
 
 router.get("/:id",
     verifyToken,
-    tenantAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    tenantAccess,
     validate({ params: idParamSchema }),
     deleteTenant);
 
 router.get("/:id/hard",
     verifyToken,
-    tenantAccess([UserRoles.SuperAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin]),
     validate({ params: idParamSchema }),
     hardDeleteTenant);
 

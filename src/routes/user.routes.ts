@@ -1,26 +1,34 @@
 import { Router } from "express";
-// import { register, login, getProfile, logout, updateUser, changeCurrentPassword, refreshAccessToken } from "../controllers/UserController";
 import { verifyToken } from "../middlewares/Auth.middleware";
 import { validate } from "../middlewares/Validate.middleware";
-import { changePasswordSchema, registerSchema, updateUserSchema } from "../validators/user.schemas";
-import { idParamSchema } from "../validators/IdParam.schema";
+import { registerSchema } from "../validators/user.schemas";
 import { UserRoles } from "../constants";
-import { login, register } from "../controllers/user.controller";
-import { userAccess } from "../middlewares/user.middleware";
+import { login, logout, register } from "../controllers/user.controller";
+import { validateUserCreation } from "../middlewares/user.middleware";
+import { authorizeRoles } from "../middlewares/Role.middleware";
 
 const router = Router();
 
-router.post("/register",
+// User registration route with RBAC enforcement
+
+router.post(
+    "/register",
     verifyToken,
-    userAccess([UserRoles.SuperAdmin, UserRoles.SuperAdmin, UserRoles.BranchManager]),
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager]),
+    validateUserCreation,
     validate({ body: registerSchema }),
-    register);
+    register
+);
 
-    router.post("/login", login);
+// Public login route
+router.post("/login", login);
 
+// Authenticated logout
+router.post("/logout", verifyToken, logout);
 
-// 
-// router.post("/logout", verifyToken, logout)
+export default router;
+
+//
 // router.get("/:id",
 //     validate({ params: idParamSchema }),
 //     verifyToken,
@@ -36,7 +44,7 @@ router.post("/register",
 // router.put("/change-password", validate({ body: changePasswordSchema }), verifyToken, changeCurrentPassword);
 // router.post("/refresh-token", refreshAccessToken);
 
-export default router;
+
 
 
 

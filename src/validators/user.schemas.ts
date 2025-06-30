@@ -4,32 +4,47 @@ import { UserRoles, Role } from "../constants";
 
 export const registerSchema = z
   .object({
-    name: z.string().min(3, "Name must be at least 3 characters!."),
-    email: z.string().email("Invalid email format!."),
+    name: z.string().min(3, "Name must be at least 3 characters!"),
+    
+    username: z
+      .string()
+      .min(4, "Username must be at least 4 characters long!")
+      .max(30, "Username must be at most 30 characters!")
+      .regex(/^[a-zA-Z0-9]+$/, "Username must be alphanumeric with no spaces or special characters!"),
+
+    email: z.string().email("Invalid email format!"),
+
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters!.")
-      .regex(/[a-z]/, "Password must contain a lowercase letter!.")
-      .regex(/[A-Z]/, "Password must contain an uppercase letter!.")
-      .regex(/[0-9]/, "Password must contain a number!."),
+      .min(8, "Password must be at least 8 characters!")
+      .regex(/[a-z]/, "Password must contain a lowercase letter!")
+      .regex(/[A-Z]/, "Password must contain an uppercase letter!")
+      .regex(/[0-9]/, "Password must contain a number!"),
+
     role: z
       .string()
-      .refine((val): val is Role => Object.values(UserRoles).includes(val as Role), {
-        message: "Invalid role provided!",
-      }),
+      .refine(
+        (val): val is keyof typeof UserRoles =>
+          Object.values(UserRoles).includes(val as UserRoles),
+        { message: "Invalid role provided!" }
+      ),
+
     tenantId: z.string().optional(),
     branchId: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.role !== UserRoles.SuperAdmin) {
-      if (!data.tenantId) {
+    const { role, tenantId, branchId } = data;
+
+    if (role !== UserRoles.SuperAdmin) {
+      if (!tenantId) {
         ctx.addIssue({
           path: ["tenantId"],
           code: z.ZodIssueCode.custom,
           message: "tenantId is required for selected roles.",
         });
       }
-      if (data.role !== UserRoles.TenantAdmin && !data.branchId) {
+
+      if (![UserRoles.SuperAdmin, UserRoles.TenantAdmin].includes(role as UserRoles) && !branchId) {
         ctx.addIssue({
           path: ["branchId"],
           code: z.ZodIssueCode.custom,
@@ -38,6 +53,7 @@ export const registerSchema = z
       }
     }
   });
+
 
 export const updateUserSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters!.").optional(),

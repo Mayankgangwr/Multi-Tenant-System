@@ -7,6 +7,7 @@ import configENV from '../config/configENV';
 
 export interface IUserDocument extends Document {
   name: string;
+  username: string;
   email: string;
   phone?: string;
   password: string;
@@ -31,12 +32,27 @@ export interface IUserDocument extends Document {
 const UserSchema: Schema<IUserDocument> = new Schema<IUserDocument>({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, index: true },
+  username: { type: String, required: true, unique: true, index: true },
   phone: { type: String },
   password: { type: String, required: true },
   profileImage: { type: String },
   role: { type: String, enum: Object.values(UserRoles), required: true },
-  tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', index: true },
-  branchId: { type: Schema.Types.ObjectId, ref: 'Branch', index: true },
+  tenantId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Tenant',
+    required: function () {
+      return this.role !== 'SuperAdmin';
+    },
+    index: true
+  },
+  branchId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Branch',
+    required: function () {
+      return ['BranchManager', 'Teacher', 'Student'].includes(this.role);
+    },
+    index: true
+  },
   refreshToken: { type: String },
   lastLoginAt: { type: Date },
   isLoggedIn: { type: Boolean, default: false },
@@ -46,9 +62,9 @@ const UserSchema: Schema<IUserDocument> = new Schema<IUserDocument>({
   timestamps: true
 });
 
-// Compound Indexes (optional but useful for multi-tenant filtering)
-UserSchema.index({ tenantId: 1, role: 1 });
+UserSchema.index({ tenantId: 1, role: 1, isDelete: 1 });
 UserSchema.index({ tenantId: 1, isDelete: 1 });
+UserSchema.index({ _id: 1, tenantId: 1, isDelete: 1 });
 
 // Pre-save hook to hash the password
 UserSchema.pre<IUserDocument>("save", async function (next) {
@@ -74,8 +90,8 @@ UserSchema.methods.isPasswordCorrect = async function (
 UserSchema.methods.generateAccessToken = function (): string {
   return jwt.sign(
     {
-      id: this._id,
-      username: this.username,
+      id: this._id.toString(),
+      email: this.email,
       role: this.role,
     },
     configENV.ACCESS_TOKEN_SECRET,
@@ -89,7 +105,7 @@ UserSchema.methods.generateAccessToken = function (): string {
 UserSchema.methods.generateRefreshToken = function (): string {
   return jwt.sign(
     {
-      id: this._id,
+      id: this._id.toString(),
       role: this.role,
     },
     configENV.REFRESH_TOKEN_SECRET,

@@ -8,53 +8,57 @@ import {
   hardDeleteSubscription,
 } from "../controllers/subscription.controller";
 import { verifyToken } from "../middlewares/Auth.middleware";
-import { tenantAccess } from "../middlewares/tenant.middleware";
 import { validate } from "../middlewares/Validate.middleware";
 import { idParamSchema } from "../validators/IdParam.schema";
 import { createSubscriptionSchema, updateSubscriptionSchema } from "../validators/subscription.schema";
 import { UserRoles } from "../constants";
+import { authorizeRoles } from "../middlewares/Role.middleware";
+import { tenantAccess } from "../middlewares/tenant.middleware";
 
 const router = Router();
 
 router.post("/",
   verifyToken,
-  tenantAccess([UserRoles.SuperAdmin]),
+  authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+  tenantAccess,
   validate({ body: createSubscriptionSchema }),
   insertSubscription
 );
 
 router.get("/",
   verifyToken,
-  tenantAccess([UserRoles.SuperAdmin]),
+  authorizeRoles([UserRoles.SuperAdmin]),
   getAllSubscriptions
 );
 
 router.get("/:id",
   verifyToken,
-  tenantAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+  authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+  tenantAccess,
   validate({ params: idParamSchema }),
   getSubscriptionById
 );
 
 router.patch("/:id",
   verifyToken,
-  tenantAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+  authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+  tenantAccess,
   validate({ body: updateSubscriptionSchema, params: idParamSchema }),
   updateSubscription
 );
 
 router.delete("/:id",
   verifyToken,
-  tenantAccess([UserRoles.SuperAdmin]),
+  authorizeRoles([UserRoles.SuperAdmin]),
   validate({ params: idParamSchema }),
   deleteSubscription
 );
 
 router.delete("/:id/hard",
   verifyToken,
-  tenantAccess([UserRoles.SuperAdmin]),
+  authorizeRoles([UserRoles.SuperAdmin]),
   validate({ params: idParamSchema }),
-  hardDeleteSubscription
+  deleteSubscription
 );
 
 export default router;

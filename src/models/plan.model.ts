@@ -10,6 +10,7 @@ export interface IPlanDocument extends Document {
   maxUsers: number;
   trialPeriodDays?: number;
   isActive: boolean;
+  isDelete: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +24,7 @@ const PlanSchema: Schema<IPlanDocument> = new Schema<IPlanDocument>({
   maxUsers: { type: Number, default: 0 },
   trialPeriodDays: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
+  isDelete: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export const PlanModel = model<IPlanDocument>('Plan', PlanSchema);

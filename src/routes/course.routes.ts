@@ -1,64 +1,60 @@
 import { Router } from "express";
 import {
-    insertCourse,
+    deleteCourse,
     getAllCourses,
     getCourseById,
-    updateCourse,
-    deleteCourse,
-    hardDeleteCourse
+    hardDeleteCourse,
+    insertCourse,
+    updateCourse
 } from "../controllers/course.controller";
 import { verifyToken } from "../middlewares/Auth.middleware";
-import { tenantAccess } from "../middlewares/tenant.middleware";
+// import {tenantAccess} from "../middlewares/tenant.middleware";
 import { validate } from "../middlewares/Validate.middleware";
 import { idParamSchema } from "../validators/IdParam.schema";
 import { createCourseSchema, updateCourseSchema } from "../validators/course.schema";
 import { UserRoles } from "../constants";
+import { authorizeRoles } from "../middlewares/Role.middleware";
+import { tenantAccess } from "../middlewares/tenant.middleware";
 
 const router = Router();
 
-// Create a new course
 router.post("/",
     verifyToken,
-    tenantAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    tenantAccess,
     validate({ body: createCourseSchema }),
     insertCourse
 );
 
-// Get all courses
 router.get("/",
-    verifyToken,
-    // tenantAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
     getAllCourses
 );
 
-// Get course by ID
 router.get("/:id",
-    verifyToken,
-    tenantAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
     validate({ params: idParamSchema }),
     getCourseById
 );
 
-// Update course
 router.patch("/:id",
     verifyToken,
-    tenantAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    tenantAccess,
     validate({ body: updateCourseSchema, params: idParamSchema }),
     updateCourse
 );
 
-// Soft delete course
 router.delete("/:id",
     verifyToken,
-    tenantAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    tenantAccess,
     validate({ params: idParamSchema }),
     deleteCourse
 );
 
-// Hard delete course
 router.delete("/:id/hard",
     verifyToken,
-    tenantAccess([UserRoles.SuperAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    tenantAccess,
     validate({ params: idParamSchema }),
     hardDeleteCourse
 );

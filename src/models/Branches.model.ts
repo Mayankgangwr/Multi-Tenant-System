@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IBranchDocument extends Document {
-    tenantId: mongoose.Schema.Types.ObjectId;
+    tenantId: mongoose.Types.ObjectId;
     name: string;
     location: string;
 }

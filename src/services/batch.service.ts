@@ -98,6 +98,15 @@ class BatchService {
             },
             { $unwind: { path: "$teacher", preserveNullAndEmptyArrays: true } },
             {
+                $lookup: {
+                    from: "teachermetadatas",
+                    foreignField: "userId",
+                    localField: "teacherId",
+                    as: "metadata"
+                }
+            },
+            { $unwind: { path: "$metadata", preserveNullAndEmptyArrays: true } },
+            {
                 $project: {
                     _id: 1,
                     organization: {
@@ -134,6 +143,11 @@ class BatchService {
                         _id: "$teacher._id",
                         name: "$teacher.name",
                         email: "$teacher.email",
+                        qualification: "$metadata.qualification",
+                        specialization: "$metadata.specialization",
+                        experience: "$metadata.experience",
+                        certifications: "$metadata.certifications",
+                        joinedAt: "$metadata.joinedAt",
                     },
                     schedule: 1,
                     maxCapacity: 1,

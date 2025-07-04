@@ -30,6 +30,7 @@ import subscriptionRoute from "./routes/subscription.routes";
 import courseRoute from "./routes/course.routes";
 import branchRoute from "./routes/branch.routes";
 import batchRoute from "./routes/batch.route";
+import TeacherRoute from "./routes/teacher.route";
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/tenants", tenantRoutes);
@@ -38,6 +39,7 @@ app.use("/api/v1/subscriptions", subscriptionRoute);
 app.use("/api/v1/courses", courseRoute);
 app.use("/api/v1/branches", branchRoute);
 app.use("/api/v1/batches", batchRoute);
+app.use("/api/v1/teachers", TeacherRoute);
 
 
 app.get('/', (_req, res) => {

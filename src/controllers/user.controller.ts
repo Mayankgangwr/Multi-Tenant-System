@@ -5,6 +5,7 @@ import userService from "../services/user.service";
 import { options } from "../constants";
 import ApiError from "../utils/apiError";
 
+
 export const register = asyncHandler(async (req: AuthRequest, res: Response) => {
     const user = await userService.create(req.body);
     res.status(201).json({ statusCode: 201, data: user, status: true, message: "User registered successfully!." })
@@ -30,4 +31,39 @@ export const logout = asyncHandler(async (req: AuthRequest, res: Response) => {
         .clearCookie("refreshToken", options)
         .clearCookie("accessToken", options)
         .json({ statusCode: 200, status: true, message: "User logout successfully!." });
+});
+
+export const refreshAccessToken = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
+    if (!incomingRefreshToken) throw ApiError.unauthorized("Unauthorized request.");
+
+    const { accessToken, refreshToken } = await userService.refreshAccessToken(incomingRefreshToken);
+
+    res.status(200)
+        .cookie("refreshToken", refreshToken, options)
+        .cookie("accessToken", accessToken, options)
+        .json({ statusCode: 200, data: { accessToken, refreshToken }, status: true, message: "Access token refresh successfully!." });
+});
+
+export const changeCurrentPassword = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user?._id?.toString();
+    if (!userId) throw ApiError.unauthorized("Unauthorized request.");
+    const { oldPassword, newPassword } = req.body;
+
+    const isPasswordChanaged = await userService.changePassword(userId, oldPassword, newPassword);
+
+    res.status(200).json({ statusCode: 200, status: isPasswordChanaged, message: "Password changed successfully!." });
+});
+
+export const getCurrentUser = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.user?._id?.toString();
+    if (!userId) throw ApiError.unauthorized("Unauthorized request.");
+    const user = await userService.getCurrentuUser(userId);
+    res.status(200).json({ statusCode: 200, data: user, status: true, message: "Current user fetched successfully!." })
+});
+
+export const updateUserDetails = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const userId = req.params.id;
+    const updatedUser = await userService.updateUserDetails(userId, req.body);
+    res.status(200).json({ statusCode: 200, data: updatedUser, status: true, message: "User details updated successfully!." })
 });

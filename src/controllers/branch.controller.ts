@@ -28,14 +28,31 @@ export const getAllBranches = asyncHandler(async (req: Request, res: Response) =
   res.status(200).json({ statusCode: 200, status: true, data: branches, message: "Branch list fetched successfully." });
 });
 
-export const deleteBranch = asyncHandler(async (req: Request, res: Response) => {
+export const getAllTenantBranches = asyncHandler(async (req: Request, res: Response) => {
+  const tenantId = req.params.tenantId;
+  if (!tenantId) throw ApiError.badRequest('Organization id missing.');
+  const branches = await branchService.getAll({ ...req.query, tenantId });
+  res.status(200).json({ statusCode: 200, status: true, data: branches, message: "Branch list fetched successfully." });
+});
+
+export const getMyAllBranches = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const tenantId = req.user?.tenantId?.toString();
+  const branches = await branchService.getAll({ ...req.query, tenantId });
+  res.status(200).json({ statusCode: 200, status: true, data: branches, message: "Branch list fetched successfully." });
+});
+
+export const deleteBranch = asyncHandler(async (req: AuthRequest, res: Response) => {
   const branchId = req.params.id;
-  const result = await branchService.delete(branchId);
+  const tenantId = req.user?.tenantId
+  if (!tenantId) throw ApiError.unauthorized("Tenant id is required.");
+  const result = await branchService.delete(branchId, tenantId);
   res.status(200).json({ statusCode: 200, status: result, message: "Branch deleted successfully." });
 });
 
-export const hardDeleteBranch = asyncHandler(async (req: Request, res: Response) => {
+export const hardDeleteBranch = asyncHandler(async (req: AuthRequest, res: Response) => {
   const branchId = req.params.id;
-  const result = await branchService.hardDelete(branchId);
+  const tenantId = req.user?.tenantId
+  if (!tenantId) throw ApiError.unauthorized("Tenant id is required.");
+  const result = await branchService.hardDelete(branchId, tenantId);
   res.status(200).json({ statusCode: 200, status: result, message: "Branch permanently deleted." });
 });

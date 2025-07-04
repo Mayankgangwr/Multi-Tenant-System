@@ -1,4 +1,6 @@
-import mongoose, { FilterQuery, Model, UpdateQuery, Document } from "mongoose";
+import mongoose, { FilterQuery, Model, UpdateQuery, Document, Types } from "mongoose";
+import { IPaginationOptions, IPaginationOptionsDTO } from "../types/comman";
+import generatePagination from "../utils/pagination.util";
 
 export default class BaseRepository<T extends Document> {
   model: Model<T>;
@@ -21,19 +23,16 @@ export default class BaseRepository<T extends Document> {
 
   async findAll(
     filter: FilterQuery<T> = {},
-    options: {
-      skip?: number;
-      limit?: number;
-      sort?: any;
-      projection?: any;
-    } = {}
+    options: IPaginationOptionsDTO = {}
   ): Promise<T[]> {
-    const query = this.model.find(filter, options.projection);
 
-    if (options.skip !== undefined) query.skip(options.skip);
-    if (options.limit !== undefined) query.limit(options.limit);
-    if (options.sort !== undefined) query.sort(options.sort);
+    const paginationOptions: IPaginationOptions<T> = generatePagination(options);
+    const { skip, limit, sort, projection } = paginationOptions;
+    const query = this.model.find(filter, projection);
 
+    query.skip(skip);
+    query.limit(limit);
+    query.sort(sort);
     return await query.exec();
   }
 
@@ -41,13 +40,15 @@ export default class BaseRepository<T extends Document> {
     return await this.model.findOneAndUpdate(filter, update, { new: true });
   }
 
-  async delete(id: string): Promise<boolean> {
-    const result = await this.model.findByIdAndUpdate(id, { isDelete: true }, { new: true });
+  async delete(id: string, tenantId: Types.ObjectId): Promise<boolean> {
+    const docId = new mongoose.Types.ObjectId(id);
+    const result = await this.model.updateOne({ _id: docId, tenantId: tenantId }, { isDelete: true }, { new: true })
     return !!result;
   }
 
-  async hardDelete(id: string): Promise<boolean> {
-    const result = await this.model.findByIdAndDelete(id);
+  async hardDelete(id: string, tenantId: Types.ObjectId): Promise<boolean> {
+    const docId = new mongoose.Types.ObjectId(id);
+    const result = await this.model.deleteOne({ _id: docId, tenantId: tenantId })
     return !!result;
   }
 }

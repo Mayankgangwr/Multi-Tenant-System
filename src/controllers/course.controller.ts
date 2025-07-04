@@ -28,14 +28,26 @@ export const getAllCourses = asyncHandler(async (req: Request, res: Response) =>
     res.status(200).json({ statusCode: 200, status: true, data: courses, message: "Course list fetched successfully." });
 });
 
-export const deleteCourse = asyncHandler(async (req: Request, res: Response) => {
+export const getAllTenantCourses = asyncHandler(async (req: Request, res: Response) => {
+    const tenantId = req.params.tenantId;
+    if (!tenantId) throw ApiError.badRequest('Organization id missing.');
+    const courses = await courseService.getAll({ ...req.query, tenantId });
+    res.status(200).json({ statusCode: 200, status: true, data: courses, message: "Course list fetched successfully." });
+});
+
+
+export const deleteCourse = asyncHandler(async (req: AuthRequest, res: Response) => {
     const courseId = req.params.id;
-    const result = await courseService.delete(courseId);
+    const tenantId = req.user?.tenantId
+    if (!tenantId) throw ApiError.unauthorized("Tenant id is required.");
+    const result = await courseService.delete(courseId, tenantId);
     res.status(200).json({ statusCode: 200, status: result, message: "Course deleted successfully." });
 });
 
-export const hardDeleteCourse = asyncHandler(async (req: Request, res: Response) => {
+export const hardDeleteCourse = asyncHandler(async (req: AuthRequest, res: Response) => {
     const courseId = req.params.id;
-    const result = await courseService.hardDelete(courseId);
+    const tenantId = req.user?.tenantId
+    if (!tenantId) throw ApiError.unauthorized("Tenant id is required.");
+    const result = await courseService.hardDelete(courseId, tenantId);
     res.status(200).json({ statusCode: 200, status: result, message: "Course permanently deleted." });
 });

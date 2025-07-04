@@ -2,6 +2,8 @@ import { Response, NextFunction } from "express";
 import { AuthRequest } from "../types/AuthResponse";
 import { UserRoles } from "../constants";
 import ApiError from "../utils/apiError";
+import userRepository from "../repositories/user.repository";
+import { Types } from "mongoose";
 
 export const userAccessControl = (options: {
   allowedRoles?: UserRoles[];
@@ -92,3 +94,47 @@ export const validateUserCreation = (req: AuthRequest, res: Response, next: Next
   // All other roles cannot create users
   return next(ApiError.forbidden("You are not authorized to create users"));
 };
+
+
+export const validateUserUpdateAccess = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  const loggedInUser = req.user;
+  const targetUserId = req.params.id;
+
+
+  if (!loggedInUser || !targetUserId) {
+    return next(ApiError.unauthorized("Unauthorized access."));
+  }
+
+  const isSameUser = loggedInUser._id.equals(targetUserId);
+  if (isSameUser) return next();
+  const targetUser = await userRepository.findById(targetUserId);
+  if (!targetUser) {
+    return next(ApiError.notFound("Target user not found."));
+  }
+
+  switch (loggedInUser.role) {
+    case UserRoles.SuperAdmin:
+      return next(); // Allow everything
+
+    case UserRoles.TenantAdmin:
+      if (loggedInUser.tenantId === targetUser.tenantId) return next();
+      break;
+
+    case UserRoles.BranchManager:
+      if (
+        loggedInUser.branchId === targetUser.branchId &&
+        [UserRoles.Teacher, UserRoles.Student].includes(targetUser.role)
+      ) {
+        return next();
+      }
+      break;
+
+    case UserRoles.Teacher:
+    case UserRoles.Student:
+      if (isSameUser) return next();
+      break;
+  }
+
+  return next(ApiError.forbidden("You are not authorized to update this user."));
+};
+

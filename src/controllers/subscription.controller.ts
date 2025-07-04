@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler";
 import subscriptionService from "../services/subscription.service";
 import ApiError from "../utils/apiError";
 import { AuthRequest } from "../types/AuthResponse";
+import { generatePaginationDto } from "../utils/pagination.util";
 
 export const insertSubscription = asyncHandler(async (req: AuthRequest, res: Response) => {
     const subscription = await subscriptionService.create(req.body);
@@ -39,10 +40,7 @@ export const getSubscriptionById = asyncHandler(async (req: Request, res: Respon
 });
 
 export const getAllSubscriptions = asyncHandler(async (req: Request, res: Response) => {
-    const subscriptions = await subscriptionService.getAll(req.query, {
-        skip: Number(req.query.skip) || 0,
-        limit: Number(req.query.limit) || 20,
-    });
+    const subscriptions = await subscriptionService.getAll(req.query);
     res.status(200).json({
         statusCode: 200,
         status: true,

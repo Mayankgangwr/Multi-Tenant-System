@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import configENV from '../config/configENV';
 
 export interface IUserDocument extends Document {
+  _id: Types.ObjectId;
   name: string;
   username: string;
   email: string;

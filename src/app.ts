@@ -29,6 +29,7 @@ import planRoute from "./routes/plan.routes";
 import subscriptionRoute from "./routes/subscription.routes";
 import courseRoute from "./routes/course.routes";
 import branchRoute from "./routes/branch.routes";
+import batchRoute from "./routes/batch.route";
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/tenants", tenantRoutes);
@@ -36,6 +37,7 @@ app.use("/api/v1/subscription-plans", planRoute);
 app.use("/api/v1/subscriptions", subscriptionRoute);
 app.use("/api/v1/courses", courseRoute);
 app.use("/api/v1/branches", branchRoute);
+app.use("/api/v1/batches", batchRoute);
 
 
 app.get('/', (_req, res) => {

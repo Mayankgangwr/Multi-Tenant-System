@@ -7,6 +7,7 @@ import { idParamSchema } from "../validators/IdParam.schema";
 import { UserRoles } from "../constants";
 import { authorizeRoles } from "../middlewares/Role.middleware";
 import { tenantAccess } from "../middlewares/tenant.middleware";
+import { getAllTenantCourses } from "../controllers/course.controller";
 
 const router = Router();
 
@@ -48,5 +49,11 @@ router.get("/:id/hard",
     authorizeRoles([UserRoles.SuperAdmin]),
     validate({ params: idParamSchema }),
     hardDeleteTenant);
+
+router.get("/:tenantId/courses",
+    verifyToken,
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    getAllTenantCourses
+);
 
 export default router;

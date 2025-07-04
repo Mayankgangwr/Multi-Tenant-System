@@ -1,5 +1,7 @@
 import { FilterQuery, Model, UpdateQuery } from "mongoose";
 import { IPlanDocument, PlanModel } from "../models/plan.model";
+import { IPaginationOptions, IPaginationOptionsDTO } from "../types/comman";
+import generatePagination from "../utils/pagination.util";
 
 class PlanRepository {
     model: Model<IPlanDocument>;
@@ -17,22 +19,19 @@ class PlanRepository {
 
     async findAll(
         filter: FilterQuery<IPlanDocument> = {},
-        options: {
-            skip?: number;
-            limit?: number;
-            sort?: any;
-            projection?: any;
-        } = {}
+        options: IPaginationOptionsDTO = {}
     ): Promise<IPlanDocument[]> {
-        const query = this.model.find(filter, options.projection);
 
-        if (options.skip !== undefined) query.skip(options.skip);
-        if (options.limit !== undefined) query.limit(options.limit);
-        if (options.sort !== undefined) query.sort(options.sort);
+        const paginationOptions: IPaginationOptions<IPlanDocument> = generatePagination(options);
+        const { skip, limit, sort, projection } = paginationOptions;
+        const query = this.model.find(filter, projection);
 
+        query.skip(skip);
+        query.limit(limit);
+        query.sort(sort);
         return await query.exec();
     }
-
+    
     async update(id: string, update: UpdateQuery<IPlanDocument>): Promise<IPlanDocument | null> {
         return await this.model.findByIdAndUpdate(id, update, { new: true });
     }

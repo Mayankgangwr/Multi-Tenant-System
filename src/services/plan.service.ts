@@ -2,6 +2,7 @@ import { IPlanDocument } from "../models/plan.model";
 import planRepository from "../repositories/plan.repository";
 import ApiError from "../utils/apiError";
 import { buildPlanFilter } from "../utils/base-filter.util";
+import { generatePaginationDto } from "../utils/pagination.util";
 
 class TenantService {
     public async create(data: Partial<IPlanDocument>): Promise<IPlanDocument> {
@@ -25,13 +26,16 @@ class TenantService {
 
     public async getAll(filter: Record<string, any>): Promise<IPlanDocument[]> {
         const filterQuery = buildPlanFilter(filter);
-        const plans = await planRepository.findAll(filterQuery);
+        const pagination = generatePaginationDto(filter);
+
+        const plans = await planRepository.findAll(filterQuery, pagination);
 
         if (!plans || plans.length === 0) {
             throw ApiError.notFound("No plans found.");
         }
         return plans;
     }
+
 
     public async delete(id: string): Promise<boolean> {
         const isDeleted = await planRepository.delete(id);
@@ -44,7 +48,6 @@ class TenantService {
         if (!isDeleted) throw ApiError.internal("Failed to delete plan.");
         return true;
     }
-
 }
 
 const tenantService = new TenantService();

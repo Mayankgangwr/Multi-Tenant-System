@@ -19,4 +19,12 @@ const SubscriptionSchema: Schema<ISubscriptionDocument> = new Schema<ISubscripti
     paymentStatus: { type: String, enum: ['Pending', 'Paid', 'Failed'], default: 'Pending' },
 });
 
+SubscriptionSchema.index({ tenantId: 1, startedAt: -1 });
+
+SubscriptionSchema.index({ planId: 1 });
+
+SubscriptionSchema.index({ paymentStatus: 1 });
+
+SubscriptionSchema.index({ isExpired: 1 });
+
 export const SubscriptionModel = model<ISubscriptionDocument>('Subscription', SubscriptionSchema);

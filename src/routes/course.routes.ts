@@ -2,13 +2,13 @@ import { Router } from "express";
 import {
     deleteCourse,
     getAllCourses,
+    getAllTenantCourses,
     getCourseById,
     hardDeleteCourse,
     insertCourse,
     updateCourse
 } from "../controllers/course.controller";
 import { verifyToken } from "../middlewares/Auth.middleware";
-// import {tenantAccess} from "../middlewares/tenant.middleware";
 import { validate } from "../middlewares/Validate.middleware";
 import { idParamSchema } from "../validators/IdParam.schema";
 import { createCourseSchema, updateCourseSchema } from "../validators/course.schema";
@@ -27,8 +27,11 @@ router.post("/",
 );
 
 router.get("/",
+    verifyToken,
+    authorizeRoles([UserRoles.SuperAdmin]),
     getAllCourses
 );
+
 
 router.get("/:id",
     validate({ params: idParamSchema }),
@@ -46,7 +49,6 @@ router.patch("/:id",
 router.delete("/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
-    tenantAccess,
     validate({ params: idParamSchema }),
     deleteCourse
 );
@@ -54,7 +56,6 @@ router.delete("/:id",
 router.delete("/:id/hard",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
-    tenantAccess,
     validate({ params: idParamSchema }),
     hardDeleteCourse
 );

@@ -10,6 +10,7 @@ export interface IBatchDocument extends Document {
   maxCapacity?: number;
   isFull?: boolean;
   status?: boolean;
+  isDeleted: boolean;
 }
 
 const BatchSchema: Schema<IBatchDocument> = new Schema<IBatchDocument>({
@@ -21,7 +22,14 @@ const BatchSchema: Schema<IBatchDocument> = new Schema<IBatchDocument>({
   maxCapacity: { type: Number, default: 0 },
   isFull: { type: Boolean, default: false },
   status: { type: Boolean, default: true },
+  isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
+
+BatchSchema.index({ tenantId: 1 });
+BatchSchema.index({ courseId: 1 });
+BatchSchema.index({ branchId: 1 });
+BatchSchema.index({ teacherId: 1 });
+BatchSchema.index({ createdAt: -1 });
 
 export const BatchModel = model<IBatchDocument>('Batch', BatchSchema);
 

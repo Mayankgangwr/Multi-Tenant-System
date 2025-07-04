@@ -58,7 +58,7 @@ router.delete("/:id/hard",
   verifyToken,
   authorizeRoles([UserRoles.SuperAdmin]),
   validate({ params: idParamSchema }),
-  deleteSubscription
+  hardDeleteSubscription
 );
 
 export default router;

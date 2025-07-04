@@ -2,8 +2,8 @@ import { Response, NextFunction } from "express";
 import { decodedJWT } from "../utils/jwt";
 import configENV from "../config/configENV";
 import ApiError from "../utils/apiError";
-import userRepository from "../repositories/UserRepository";
 import { AuthRequest } from "../types/AuthResponse";
+import userRepository from "../repositories/user.repository";
 
 export const verifyToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const accessToken = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer", "");

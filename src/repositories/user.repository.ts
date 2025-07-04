@@ -1,5 +1,7 @@
 import { IUserDocument, UserModel } from "../models/user.model";
 import { FilterQuery, Model, UpdateQuery } from "mongoose";
+import { IPaginationOptions, IPaginationOptionsDTO } from "../types/comman";
+import generatePagination from "../utils/pagination.util";
 
 class UserRepository {
     model: Model<IUserDocument>;
@@ -19,7 +21,7 @@ class UserRepository {
     }
 
     async update(id: string, update: UpdateQuery<IUserDocument>): Promise<IUserDocument | null> {
-        return await this.model.findByIdAndUpdate(id, update, { new: true }).select(this.deselectString);
+        return await this.model.findByIdAndUpdate(id, update, { new: true });
     }
 
     async findById(id: string): Promise<IUserDocument | null> {
@@ -32,21 +34,19 @@ class UserRepository {
 
     async findAll(
         filter: FilterQuery<IUserDocument> = {},
-        options: {
-            skip?: number;
-            limit?: number;
-            sort?: any;
-            projection?: any;
-        } = {}
+        options: IPaginationOptionsDTO = {}
     ): Promise<IUserDocument[]> {
-        const query = this.model.find(filter, options.projection);
 
-        if (options.skip !== undefined) query.skip(options.skip);
-        if (options.limit !== undefined) query.limit(options.limit);
-        if (options.sort !== undefined) query.sort(options.sort);
+        const paginationOptions: IPaginationOptions<IUserDocument> = generatePagination(options);
+        const { skip, limit, sort, projection } = paginationOptions;
+        const query = this.model.find(filter, projection);
 
+        query.skip(skip);
+        query.limit(limit);
+        query.sort(sort);
         return await query.exec();
     }
+
 
     async findOneWithSencetiveFields(filter: Record<string, any>) {
         return await this.model.findOne(filter);

@@ -5,6 +5,7 @@ import { ITenantDocument } from "../models/tenant.model";
 import { IUserDocument } from "../models/user.model";
 import { ICourseDocument } from "../models/course.model";
 import { IBranchDocument } from "../models/branch.model";
+import { IBatchDocument } from "../models/batch.model";
 
 
 /**
@@ -111,9 +112,9 @@ export const buildBranchFilter = (
     const filter: FilterQuery<IBranchDocument> = {};
 
     // Soft delete flag
-    filter.isDelete = false;
-    if (query.isDelete !== undefined) {
-        filter.isDelete = query.isDelete === "true";
+    filter.isDeleted = false;
+    if (query.isDeleted !== undefined) {
+        filter.isDeleted = query.isDeleted === "true";
     }
 
     // Filter by name (case-insensitive partial match)
@@ -134,8 +135,43 @@ export const buildBranchFilter = (
 
     // Optional: filter by tenantId
     if (query.tenantId) {
-        filter.tenantId = query.tenantId;
+        filter.tenantId = new mongoose.Types.ObjectId(String(query.tenantId));;
     }
+
+
 
     return filter;
 };
+
+export const buildBatchFilter = (query: Record<string, any>): FilterQuery<IBatchDocument> => {
+    const filter: FilterQuery<IBatchDocument> = {};
+
+    filter.isDeleted = false;
+    if (query.isDeleted !== undefined) {
+        filter.isDeleted = query.isDeleted === "true";
+    }
+
+    if (query.tenantId) {
+        filter.tenantId = new mongoose.Types.ObjectId(String(query.tenantId));;
+    }
+
+    if (query.branchId) {
+        filter.branchId = new mongoose.Types.ObjectId(String(query.branchId));;
+    }
+
+    if (query.teacherId) {
+        filter.teacherId = new mongoose.Types.ObjectId(String(query.teacherId));;
+    }
+
+    if (query.courseId) {
+        filter.courseId = new mongoose.Types.ObjectId(String(query.courseId));;
+    }
+
+    if (query.schedule) {
+        filter.schedule = query.schedule;
+    }
+
+
+
+    return filter;
+}

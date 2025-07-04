@@ -1,18 +1,19 @@
 import { Router } from "express";
 import { verifyToken } from "../middlewares/Auth.middleware";
 import { validate } from "../middlewares/Validate.middleware";
-import { registerSchema } from "../validators/user.schemas";
+import { changePasswordSchema, registerSchema, updateUserSchema } from "../validators/user.schemas";
 import { UserRoles } from "../constants";
-import { login, logout, register } from "../controllers/user.controller";
-import { validateUserCreation } from "../middlewares/user.middleware";
+import { changeCurrentPassword, getCurrentUser, login, logout, refreshAccessToken, register, updateUserDetails } from "../controllers/user.controller";
+import { validateUserCreation, validateUserUpdateAccess } from "../middlewares/user.middleware";
 import { authorizeRoles } from "../middlewares/Role.middleware";
+import { tenantAccess } from "../middlewares/tenant.middleware";
+import { idParamSchema } from "../validators/IdParam.schema";
 
 const router = Router();
 
 // User registration route with RBAC enforcement
 
-router.post(
-    "/register",
+router.route("/register").post(
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager]),
     validateUserCreation,
@@ -20,11 +21,25 @@ router.post(
     register
 );
 
-// Public login route
-router.post("/login", login);
+router.route("/login").post(login);
 
-// Authenticated logout
-router.post("/logout", verifyToken, logout);
+router.route("/logout").post(verifyToken, logout);
+
+router.route("/refresh-token").post(refreshAccessToken);
+
+router.put("/change-password", verifyToken, validate({ body: changePasswordSchema }), changeCurrentPassword);
+
+router.route('/me').get(verifyToken, getCurrentUser);
+
+router.route('/:id').patch(
+    verifyToken,
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher, UserRoles.Student]),
+    tenantAccess,
+    validateUserUpdateAccess,
+    validate({ body: updateUserSchema, params: idParamSchema }),
+    updateUserDetails
+);
+
 
 export default router;
 
@@ -41,8 +56,7 @@ export default router;
 //     validate({ body: updateUserSchema, params: idParamSchema }),
 //     updateUser
 // );
-// router.put("/change-password", validate({ body: changePasswordSchema }), verifyToken, changeCurrentPassword);
-// router.post("/refresh-token", refreshAccessToken);
+
 
 
 

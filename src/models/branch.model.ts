@@ -11,6 +11,7 @@ export interface IBranchDocument extends Document {
   isMainBranch: boolean;
   holidays: string[];
   weeklyOff: string[];
+  isDeleted: boolean;
 }
 
 const BranchSchema: Schema<IBranchDocument> = new Schema<IBranchDocument>({
@@ -23,6 +24,7 @@ const BranchSchema: Schema<IBranchDocument> = new Schema<IBranchDocument>({
   isMainBranch: { type: Boolean, default: false },
   holidays: [{ type: String, default: [] }],
   weeklyOff: [{ type: String, default: [] }],
+  isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
 export const BranchModel = model<IBranchDocument>('Branch', BranchSchema);

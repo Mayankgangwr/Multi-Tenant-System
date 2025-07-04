@@ -1,8 +1,8 @@
 import { ITenantDocument } from "../models/tenant.model";
 import tenantRepository from "../repositories/tenant.repository";
-import { PaginationOptions } from "../types/comman";
 import ApiError from "../utils/apiError";
 import { buildTenantFilter } from "../utils/FilterQueryBuilder";
+import { generatePaginationDto } from "../utils/pagination.util";
 
 class TenantService {
     private async existingTenant(email: string | undefined, excludeId: string | undefined = undefined) {
@@ -54,14 +54,11 @@ class TenantService {
 
     public async getAll(
         filter: Record<string, any>,
-        pagination: PaginationOptions = { skip: 0, limit: 20 }
     ): Promise<ITenantDocument[]> {
         const filterQuery = buildTenantFilter(filter);
-        const tenants = await tenantRepository.findAll(filterQuery, {
-            skip: pagination.skip,
-            limit: pagination.limit,
-            sort: { createdAt: -1 },
-        });
+        const pagination = generatePaginationDto(filter);
+
+        const tenants = await tenantRepository.findAll(filterQuery, pagination);
 
         if (!tenants || tenants.length === 0) {
             throw ApiError.notFound("No tenants found.");

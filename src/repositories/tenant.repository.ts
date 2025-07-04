@@ -1,5 +1,7 @@
 import { FilterQuery, Model, UpdateQuery } from "mongoose";
 import { ITenantDocument, TenantModel } from "../models/tenant.model";
+import { IPaginationOptions, IPaginationOptionsDTO } from "../types/comman";
+import generatePagination from "../utils/pagination.util";
 
 class TenantRepository {
     model: Model<ITenantDocument>;
@@ -21,21 +23,19 @@ class TenantRepository {
 
     async findAll(
         filter: FilterQuery<ITenantDocument> = {},
-        options: {
-            skip?: number;
-            limit?: number;
-            sort?: any;
-            projection?: any;
-        } = {}
+        options: IPaginationOptionsDTO = {}
     ): Promise<ITenantDocument[]> {
-        const query = this.model.find(filter, options.projection);
 
-        if (options.skip !== undefined) query.skip(options.skip);
-        if (options.limit !== undefined) query.limit(options.limit);
-        if (options.sort !== undefined) query.sort(options.sort);
+        const paginationOptions: IPaginationOptions<ITenantDocument> = generatePagination(options);
+        const { skip, limit, sort, projection } = paginationOptions;
+        const query = this.model.find(filter, projection);
 
+        query.skip(skip);
+        query.limit(limit);
+        query.sort(sort);
         return await query.exec();
     }
+
 
     async findByEmail(email: string): Promise<ITenantDocument | null> {
         return await this.model.findOne({ email });

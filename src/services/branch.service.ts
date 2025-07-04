@@ -1,7 +1,9 @@
+import { Types } from "mongoose";
 import { IBranchDocument } from "../models/branch.model";
 import branchRepository from "../repositories/branch.repository";
 import ApiError from "../utils/apiError";
 import { buildBranchFilter } from "../utils/base-filter.util";
+import { generatePaginationDto, generatePaginationOptions } from "../utils/pagination.util";
 
 class BranchService {
   public async create(data: Partial<IBranchDocument>): Promise<IBranchDocument> {
@@ -43,23 +45,61 @@ class BranchService {
     return branch;
   }
 
-  public async getAll(filter: Record<string, any>): Promise<IBranchDocument[]> {
-    const filterQuery = buildBranchFilter(filter);
-    const branches = await branchRepository.findAll(filterQuery);
+  public async getAll(query: Record<string, any>): Promise<IBranchDocument[]> {
+    const filterQuery = buildBranchFilter(query);
+    const paginationOptions = generatePaginationOptions(query);
+    const { skip, limit, sort } = paginationOptions;
+    const branches = await branchRepository.model.aggregate([
+      { $match: filterQuery },
+      {
+        $lookup: {
+          from: "tenants",
+          foreignField: "_id",
+          localField: "tenantId",
+          as: "organization"
+        }
+      },
+      { $unwind: { path: "$organization", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          location: 1,
+          contactEmail: 1,
+          phoneNumber: 1,
+          timeZone: 1,
+          isMainBranch: 1,
+          holidays: 1,
+          staweeklyOfftus: 1,
+          isDelete: 1,
+          organization: {
+            _id: "$organization._id",
+            name: "$organization.name",
+            email: "$organization.email",
+            status: "$organization.status"
+          }
+        }
+      },
+
+      { $sort: sort },
+      { $skip: skip },
+      { $limit: limit }
+    ]);
+
     if (!branches || branches.length === 0) {
       throw ApiError.notFound("No branches found.");
     }
     return branches;
   }
 
-  public async delete(id: string): Promise<boolean> {
-    const isDeleted = await branchRepository.delete(id);
+  public async delete(id: string, tenantId: Types.ObjectId): Promise<boolean> {
+    const isDeleted = await branchRepository.delete(id, tenantId);
     if (!isDeleted) throw ApiError.internal("Failed to delete branch.");
     return true;
   }
 
-  public async hardDelete(id: string): Promise<boolean> {
-    const isDeleted = await branchRepository.hardDelete(id);
+  public async hardDelete(id: string, tenantId: Types.ObjectId): Promise<boolean> {
+    const isDeleted = await branchRepository.hardDelete(id, tenantId);
     if (!isDeleted) throw ApiError.internal("Failed to hard delete branch.");
     return true;
   }

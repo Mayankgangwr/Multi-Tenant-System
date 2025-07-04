@@ -1,11 +1,12 @@
 import { z } from "zod";
 import { isPasswordStrong } from "../utils/isPasswordStrong";
 import { UserRoles, Role } from "../constants";
+import { objectId } from "./IdParam.schema";
 
 export const registerSchema = z
   .object({
     name: z.string().min(3, "Name must be at least 3 characters!"),
-    
+
     username: z
       .string()
       .min(4, "Username must be at least 4 characters long!")
@@ -55,23 +56,32 @@ export const registerSchema = z
   });
 
 
-export const updateUserSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters!.").optional(),
-  email: z.string().email("Invalid email format!.").optional(),
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters!.")
-    .regex(/[a-z]/, "Password must contain a lowercase letter!.")
-    .regex(/[A-Z]/, "Password must contain an uppercase letter!.")
-    .regex(/[0-9]/, "Password must contain a number!.").optional(),
-  role: z
-    .string()
-    .refine((val): val is Role => Object.values(UserRoles).includes(val as Role), {
-      message: "Invalid role provided!",
-    }).optional(),
-}).refine((data) => Object.keys(data).length > 0, {
-  message: "At least one field must be provided to update.",
-})
+
+export const updateUserSchema = z
+  .object({
+
+    name: z.string().min(3, "Name must be at least 3 characters.").optional(),
+    username: z
+      .string()
+      .min(3, "Username must be at least 3 characters.")
+      .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain alphanumeric characters and underscores.")
+      .optional(),
+    email: z.string().email("Invalid email format.").optional(),
+    phone: z
+      .string()
+      .min(7, "Phone number must be at least 7 digits.")
+      .max(15, "Phone number can't be longer than 15 digits.")
+      .regex(/^[0-9]+$/, "Phone number must contain only digits.")
+      .optional(),
+    profileImage: z.string().url("Profile image must be a valid URL.").optional(),
+    tenantId: z.string().optional(),
+  })
+  .strict({
+    message: "One or more unexpected fields were provided.",
+  }) // ⛔ will throw if any extra field is passed
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field must be provided to update.",
+  });
 
 export const changePasswordSchema = z
   .object({

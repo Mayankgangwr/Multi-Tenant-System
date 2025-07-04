@@ -6,8 +6,10 @@ export interface IBatchDocument extends Document {
   courseId: Types.ObjectId;
   branchId: Types.ObjectId;
   teacherId: Types.ObjectId;
+  studentIds: Types.ObjectId[];
   schedule: Date;
   maxCapacity?: number;
+  remainingSheets?: number
   isFull?: boolean;
   status?: boolean;
   isDeleted: boolean;
@@ -17,9 +19,11 @@ const BatchSchema: Schema<IBatchDocument> = new Schema<IBatchDocument>({
   tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true },
   courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
   branchId: { type: Schema.Types.ObjectId, ref: 'Branch', required: true },
+  studentIds: [{ type: Schema.Types.ObjectId, ref: 'User', default: null }],
   teacherId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   schedule: { type: Date, required: true },
   maxCapacity: { type: Number, default: 0 },
+  remainingSheets: { type: Number, default: 0 },
   isFull: { type: Boolean, default: false },
   status: { type: Boolean, default: true },
   isDeleted: { type: Boolean, default: false },

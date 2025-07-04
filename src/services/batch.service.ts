@@ -22,7 +22,7 @@ class BatchService {
             );
         }
 
-        const batch = await batchRepository.create(data);
+        const batch = await batchRepository.create({ ...data, remainingSheets: data.maxCapacity });
         if (!batch) throw ApiError.internal("Failed to create new batch.");
         return batch;
     }

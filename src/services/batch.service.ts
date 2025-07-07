@@ -43,9 +43,47 @@ class BatchService {
                 "Another batch with the same schedule and details already exists for this tenant."
             );
         }
-
         const batch = await batchRepository.model.findByIdAndUpdate(batchId, data, { new: true });
         if (!batch) throw ApiError.notFound(`No batch found with ID "${batchId}".`);
+        return batch;
+    }
+
+    public async updateStudent(
+        batchId: string,
+        studentId: Types.ObjectId,
+        isRemove: boolean = false
+    ): Promise<IBatchDocument> {
+        const batch = await batchRepository.findById(batchId);
+        if (!batch) {
+            throw ApiError.badRequest('Invalid batch Id.');
+        }
+
+        if (!batch.studentIds) {
+            batch.studentIds = [];
+        }
+
+        const isExist = batch.studentIds.find((stdId: Types.ObjectId) =>
+            stdId.equals(studentId)
+        );
+
+        if (isExist && !isRemove) {
+            throw ApiError.conflict("You have already purchased this batch.");
+        }
+
+        if (!isExist && isRemove) {
+            throw ApiError.notFound("Student is not enrolled in this batch.");
+        }
+
+        if (isRemove) {
+            batch.studentIds = batch.studentIds.filter(
+                (stdId: Types.ObjectId) => !stdId.equals(studentId)
+            );
+        } else {
+            batch.studentIds.push(studentId);
+        }
+
+        await batch.save({ validateBeforeSave: false });
+
         return batch;
     }
 

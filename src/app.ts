@@ -31,6 +31,8 @@ import courseRoute from "./routes/course.routes";
 import branchRoute from "./routes/branch.routes";
 import batchRoute from "./routes/batch.route";
 import TeacherRoute from "./routes/teacher.route";
+import StudentRoute from "./routes/student.route";
+import AttendanceRoute from "./routes/attendance.routes";
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/tenants", tenantRoutes);
@@ -40,6 +42,8 @@ app.use("/api/v1/courses", courseRoute);
 app.use("/api/v1/branches", branchRoute);
 app.use("/api/v1/batches", batchRoute);
 app.use("/api/v1/teachers", TeacherRoute);
+app.use("/api/v1/students", StudentRoute);
+app.use("/api/v1/attendance", AttendanceRoute);
 
 
 app.get('/', (_req, res) => {

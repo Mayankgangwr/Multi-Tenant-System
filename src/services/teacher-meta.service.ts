@@ -19,14 +19,6 @@ class TeacherMetaService {
     }
 
     public async update(filter: Record<string, any>, data: Partial<ITeacherMetaDataDocument>): Promise<ITeacherMetaDataDocument> {
-        const { userId } = filter;
-        const existingMeta = await teacherMetaRepository.model.findOne({
-            userId: userId,
-            isDeleted: false,
-        });
-
-        if (existingMeta) throw ApiError.badRequest("already exists for this teacher details.");
-
         const updatedMeta = await teacherMetaRepository.update(filter, data);
         if (!updatedMeta) throw ApiError.internal("Failed to create new teacher details.");
         return updatedMeta;

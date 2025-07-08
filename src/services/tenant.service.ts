@@ -1,8 +1,9 @@
+import { PipelineStage } from "mongoose";
 import { ITenantDocument } from "../models/tenant.model";
 import tenantRepository from "../repositories/tenant.repository";
 import ApiError from "../utils/apiError";
 import { buildTenantFilter } from "../utils/FilterQueryBuilder";
-import { generatePaginationDto } from "../utils/pagination.util";
+import { generatePaginationDto, generatePaginationOptions } from "../utils/pagination.util";
 
 class TenantService {
     private async existingTenant(email: string | undefined, excludeId: string | undefined = undefined) {
@@ -78,6 +79,79 @@ class TenantService {
         return true;
     }
 
+    public async topTenant(filter: Record<string, any>) {
+        const pipeline: PipelineStage[] = [];
+        if (filter.search?.trim()) pipeline.push({ $match: { name: { $regex: filter.search, $options: 'i' } } });
+
+        const paginationOptions = generatePaginationOptions(filter);
+        const { skip, limit, sort } = paginationOptions;
+
+        const tenants = await tenantRepository.model.aggregate([
+            ...pipeline,
+            {
+                $lookup: {
+                    from: "courses",
+                    let: { tenantId: "$_id" },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ["$tenantId", "$$tenantId"] } } },
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1,
+                                description: 1,
+                                status: 1,
+                                category: 1,
+                                level: 1,
+                                duration: 1,
+                                imageUrl: 1,
+                                fee: 1
+                            }
+                        }
+                    ],
+                    as: "courses"
+                }
+            },
+            {
+                $lookup: {
+                    from: "branches",
+                    let: { tenantId: "$_id" },
+                    pipeline: [
+                        { $match: { $expr: { $eq: ["$tenantId", "$$tenantId"] } } },
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1,
+                                location: 1,
+                                contactEmail: 1,
+                                phoneNumber: 1,
+                                timeZone: 1,
+                                isMainBranch: 1,
+                                holidays: 1,
+                                weeklyOff: 1
+                            }
+                        }
+                    ],
+                    as: "branches"
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    email: 1,
+                    courses: 1,
+                    branches: 1
+                }
+            },
+            { $sort: sort },
+            { $skip: skip },
+            { $limit: limit }
+        ]).exec();
+
+        if (!tenants || tenants.length === 0) throw ApiError.notFound("No tenants found.");
+
+        return tenants;
+    }
 }
 
 const tenantService = new TenantService();

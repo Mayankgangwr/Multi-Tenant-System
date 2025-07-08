@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteTenant, getAllTenants, getSingleTenant, getTenantById, hardDeleteTenant, insertTenant, updateTenant } from "../controllers/tenant.controller";
+import { deleteTenant, getAllTenants, getTopTenants, getTenantById, hardDeleteTenant, insertTenant, updateTenant } from "../controllers/tenant.controller";
 import { validate } from "../middlewares/Validate.middleware";
 import { createTenantSchema, updateTenantSchema } from "../validators/tenant.schema";
 import { verifyToken } from "../middlewares/Auth.middleware";
@@ -22,6 +22,10 @@ router.get("/",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin]),
     getAllTenants);
+
+
+router.get("/top",
+    getTopTenants);
 
 router.get("/:id",
     verifyToken,
@@ -55,5 +59,6 @@ router.get("/:tenantId/courses",
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
     getAllTenantCourses
 );
+
 
 export default router;

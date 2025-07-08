@@ -27,8 +27,6 @@ export const buildTenantFilter = (
     return filter;
 };
 
-
-
 export const buildSubscriptionFilter = (
     query: Record<string, any>
 ): FilterQuery<ISubscriptionDocument> => {

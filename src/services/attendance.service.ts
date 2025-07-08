@@ -100,17 +100,57 @@ class AttendanceService {
         return attendance;
     }
 
-    async getByBatchAndDate(batchId: Types.ObjectId, date: Date) {
-        return attendanceRepository.findAll({
-            batchId,
-            date,
-            isDeleted: { $exists: false },
+    async getSummaryForStudent(query: Record<string, any>) {
+        const filterQuery = buildAttendanceFilter(query);
+        const records = await attendanceRepository.model.aggregate([
+            { $match: filterQuery },
+            {
+                $group: {
+                    _id: "$status",
+                    count: { $sum: 1 },
+                },
+            },
+        ]).exec();
+
+        const summary: Record<string, number> = { present: 0, absent: 0, total: 0 };
+        records.forEach((r) => {
+            if (r._id === true) summary.present = r.count;
+            if (r._id === false) summary.absent = r.count;
+            summary.total += r.count;
         });
+
+        return summary;
     }
 
-    async getHistory(tenantId: Types.ObjectId, filters: any = {}) {
-        const query: any = { tenantId, isDeleted: { $exists: false }, ...filters };
-        return attendanceRepository.findAll(query);
+    async getBatchSummary(query: Record<string, any>) {
+        const filterQuery = buildAttendanceFilter(query);
+        const records = await attendanceRepository.model.aggregate([
+            { $match: filterQuery },
+            {
+                $group: {
+                    _id: "$studentId",
+                    total: { $sum: 1 },
+                    present: {
+                        $sum: {
+                            $cond: [{ $eq: ["$status", true] }, 1, 0],
+                        },
+                    },
+                    absent: {
+                        $sum: {
+                            $cond: [{ $eq: ["$status", false] }, 1, 0],
+                        },
+                    },
+                },
+            },
+        ]);
+
+        return records.map((r) => ({
+            studentId: r._id,
+            total: r.total,
+            present: r.present,
+            absent: r.absent,
+            attendancePercentage: r.total > 0 ? ((r.present / r.total) * 100).toFixed(2) : "0",
+        }));
     }
 
     async updateStatus(attendanceId: string, status: boolean, remarks: string | undefined, user: IUserDocument) {
@@ -140,57 +180,6 @@ class AttendanceService {
         }
 
         return true;
-    }
-
-    async getSummaryForStudent(studentId: Types.ObjectId) {
-        const records = await attendanceRepository.model.aggregate([
-            { $match: { studentId, isDeleted: { $exists: false } } },
-            {
-                $group: {
-                    _id: "$status",
-                    count: { $sum: 1 },
-                },
-            },
-        ]);
-
-        const summary: Record<string, number> = { present: 0, absent: 0, total: 0 };
-        records.forEach((r) => {
-            if (r._id === true) summary.present = r.count;
-            if (r._id === false) summary.absent = r.count;
-            summary.total += r.count;
-        });
-
-        return summary;
-    }
-
-    async getBatchSummary(batchId: Types.ObjectId) {
-        const records = await attendanceRepository.model.aggregate([
-            { $match: { batchId, isDeleted: { $exists: false } } },
-            {
-                $group: {
-                    _id: "$studentId",
-                    total: { $sum: 1 },
-                    present: {
-                        $sum: {
-                            $cond: [{ $eq: ["$status", true] }, 1, 0],
-                        },
-                    },
-                    absent: {
-                        $sum: {
-                            $cond: [{ $eq: ["$status", false] }, 1, 0],
-                        },
-                    },
-                },
-            },
-        ]);
-
-        return records.map((r) => ({
-            studentId: r._id,
-            total: r.total,
-            present: r.present,
-            absent: r.absent,
-            attendancePercentage: r.total > 0 ? ((r.present / r.total) * 100).toFixed(2) : "0",
-        }));
     }
 
     async deleteByBatch(batchId: Types.ObjectId) {

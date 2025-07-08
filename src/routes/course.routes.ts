@@ -27,8 +27,8 @@ router.post("/",
 );
 
 router.get("/",
-    verifyToken,
-    authorizeRoles([UserRoles.SuperAdmin]),
+    // verifyToken,
+    // authorizeRoles([UserRoles.SuperAdmin]),
     getAllCourses
 );
 

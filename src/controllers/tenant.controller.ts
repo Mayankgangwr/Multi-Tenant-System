@@ -45,3 +45,9 @@ export const hardDeleteTenant = asyncHandler(async (req: Request, res: Response)
     res.status(200).json({ statusCode: 200, status: tenant, message: "Tenant deleted successfully." });
 });
 
+export const getTopTenants = asyncHandler(async (req: Request, res: Response) => {
+    const search = req.query.search as string;
+    const tenant = await tenantService.topTenant({ ...req.query, search });
+    res.status(200).json({ statusCode: 200, status: true, data: tenant, message: "Course permanently deleted." });
+});
+

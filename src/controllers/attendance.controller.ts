@@ -112,7 +112,7 @@ export const getStudentSummary = asyncHandler(async (req: Request, res: Response
 
     if (!studentId) throw ApiError.badRequest("Student ID is required.");
 
-    const summary = await attendanceService.getSummaryForStudent(new mongoose.Types.ObjectId(studentId));
+    const summary = await attendanceService.getSummaryForStudent({ ...req.query, studentId });
 
     res.status(200).json({
         statusCode: 200,
@@ -127,7 +127,7 @@ export const getBatchSummary = asyncHandler(async (req: Request, res: Response) 
 
     if (!batchId) throw ApiError.badRequest("Batch ID is required.");
 
-    const summary = await attendanceService.getBatchSummary(new mongoose.Types.ObjectId(batchId));
+    const summary = await attendanceService.getBatchSummary({ ...req.query, batchId });
 
     res.status(200).json({
         statusCode: 200,

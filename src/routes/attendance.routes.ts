@@ -98,7 +98,7 @@ router.get(
     "/batch/:batchId/summary",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher]),
-    validate({ params: idParamSchema }),
+    // validate({ params: idParamSchema }),
     getBatchSummary
 );
 

@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { ICourseDocument } from "../models/course.model";
 import courseRepository from "../repositories/course.repository";
 import ApiError from "../utils/apiError";
@@ -40,10 +40,116 @@ class CourseService {
     }
 
     public async getById(courseId: string): Promise<ICourseDocument> {
-        const course = await courseRepository.findById(courseId);
-        if (!course) throw ApiError.notFound(`No course found with ID "${courseId}".`);
-        return course;
+        const course = await courseRepository.model.aggregate([
+            {
+                $match: {
+                    _id: new mongoose.Types.ObjectId(courseId)
+                }
+            },
+            {
+                $lookup: {
+                    from: 'tenants',
+                    foreignField: '_id',
+                    localField: 'tenantId',
+                    as: 'organization'
+                }
+            },
+            {
+                $unwind: {
+                    path: '$organization',
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $lookup: {
+                    from: 'branches',
+                    let: { tenantId: '$organization._id', courseId: '$_id' },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $eq: ['$tenantId', '$$tenantId']
+                                }
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: 'batches',
+                                let: { branchId: '$_id', courseId: '$$courseId' },
+                                pipeline: [
+                                    {
+                                        $match: {
+                                            $expr: {
+                                                $and: [
+                                                    { $eq: ['$branchId', '$$branchId'] },
+                                                    { $eq: ['$courseId', '$$courseId'] }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    {
+                                        $project: {
+                                            _id: 1,
+                                            schedule: 1,
+                                            maxCapacity: 1,
+                                            isFull: 1,
+                                            remainingSheets: 1
+                                        }
+                                    }
+                                ],
+                                as: 'batches'
+                            }
+                        },
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1,
+                                location: 1,
+                                contactEmail: 1,
+                                phoneNumber: 1,
+                                timeZone: 1,
+                                isMainBranch: 1,
+                                holidays: 1,
+                                weeklyOff: 1,
+                                batches: 1
+                            }
+                        }
+                    ],
+                    as: 'branches'
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    name: 1,
+                    description: 1,
+                    category: 1,
+                    level: 1,
+                    duration: 1,
+                    imageUrl: 1,
+                    fee: 1,
+                    isDelete: 1,
+                    status: 1,
+                    organization: {
+                        _id: '$organization._id',
+                        name: '$organization.name',
+                        email: '$organization.email',
+                        contactPhone: '$organization.contactPhone',
+                        status: '$organization.status'
+                    },
+                    branches: 1
+                }
+            }
+        ]).exec();
+
+        if (!course?.length) {
+            throw ApiError.notFound(`No course found with ID "${courseId}".`);
+        }
+
+        return course[0];
     }
+
+
 
     public async getAll(filter: Record<string, any>): Promise<ICourseDocument[]> {
         const filterQuery = buildCourseFilter(filter);
@@ -76,6 +182,7 @@ class CourseService {
                         _id: "$organization._id",
                         name: "$organization.name",
                         email: "$organization.email",
+                        contactPhone: "$organization.contactPhone",
                         status: "$organization.status"
                     }
                 }

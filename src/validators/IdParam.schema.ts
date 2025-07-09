@@ -9,6 +9,6 @@ export const objectId = (message: string = "Invalid Id") =>
     });
 
 // Route param schema
-export const idParamSchema = z.object({
-    id: objectId(),
+export const idParamSchema = (key?: string) => z.object({
+    [key || `id`]: objectId(),
 });

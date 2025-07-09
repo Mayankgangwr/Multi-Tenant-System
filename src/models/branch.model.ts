@@ -27,4 +27,7 @@ const BranchSchema: Schema<IBranchDocument> = new Schema<IBranchDocument>({
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
+BranchSchema.index({ tenantId: 1 });
+
+
 export const BranchModel = model<IBranchDocument>('Branch', BranchSchema);

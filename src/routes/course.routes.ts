@@ -34,7 +34,7 @@ router.get("/",
 
 
 router.get("/:id",
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     getCourseById
 );
 
@@ -42,21 +42,21 @@ router.patch("/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
     tenantAccess,
-    validate({ body: updateCourseSchema, params: idParamSchema }),
+    validate({ body: updateCourseSchema, params: idParamSchema() }),
     updateCourse
 );
 
 router.delete("/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     deleteCourse
 );
 
 router.delete("/:id/hard",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     hardDeleteCourse
 );
 

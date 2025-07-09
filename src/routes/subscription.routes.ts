@@ -35,7 +35,7 @@ router.get("/:id",
   verifyToken,
   authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
   tenantAccess,
-  validate({ params: idParamSchema }),
+  validate({ params: idParamSchema() }),
   getSubscriptionById
 );
 
@@ -43,21 +43,21 @@ router.patch("/:id",
   verifyToken,
   authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
   tenantAccess,
-  validate({ body: updateSubscriptionSchema, params: idParamSchema }),
+  validate({ body: updateSubscriptionSchema, params: idParamSchema() }),
   updateSubscription
 );
 
 router.delete("/:id",
   verifyToken,
   authorizeRoles([UserRoles.SuperAdmin]),
-  validate({ params: idParamSchema }),
+  validate({ params: idParamSchema() }),
   deleteSubscription
 );
 
 router.delete("/:id/hard",
   verifyToken,
   authorizeRoles([UserRoles.SuperAdmin]),
-  validate({ params: idParamSchema }),
+  validate({ params: idParamSchema() }),
   hardDeleteSubscription
 );
 

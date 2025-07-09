@@ -33,12 +33,13 @@ router.get("/",
     getAllBatches);
 
 router.get("/:tenantId",
+    validate({ params: idParamSchema(`tenantId`) }),
     getAllTenantBatches
 );
 
 router.get(
     "/:id",
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     getBatchById
 );
 
@@ -47,7 +48,7 @@ router.patch(
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager]),
     tenantAccess,
-    validate({ body: updateBatchSchema, params: idParamSchema }),
+    validate({ body: updateBatchSchema, params: idParamSchema() }),
     updateBatch
 );
 
@@ -55,7 +56,7 @@ router.delete(
     "/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager]),
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     deleteBatch
 );
 
@@ -63,7 +64,7 @@ router.delete(
     "/:id/hard",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin]),
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     hardDeleteBatch
 );
 

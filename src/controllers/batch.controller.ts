@@ -43,6 +43,14 @@ export const getAllTenantBatches = asyncHandler(async (req: Request, res: Respon
         .json({ statusCode: 200, status: true, data: batches, message: "Batch list fetched successfully." });
 });
 
+export const getBranchBatches = asyncHandler(async (req: Request, res: Response) => {
+     const branchId = req.params.branchId;
+    if (!branchId) throw ApiError.badRequest('branch id missing.');
+    const batches = await batchService.getAll({ ...req.query, branchId });
+    res.status(200)
+        .json({ statusCode: 200, status: true, data: batches, message: "Batch list fetched successfully." });
+})
+
 export const deleteBatch = asyncHandler(async (req: AuthRequest, res: Response) => {
     const batchId = req.params.id;
     const tenantId = req.user?.tenantId

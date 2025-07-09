@@ -7,6 +7,7 @@ import { tenantAccess } from "../middlewares/tenant.middleware";
 import { validate } from "../middlewares/Validate.middleware";
 import { createBranchSchema, updateBranchSchema } from "../validators/branch.schema";
 import { idParamSchema } from "../validators/IdParam.schema";
+import { getBranchBatches } from "../controllers/batch.controller";
 
 const router = Router();
 
@@ -31,7 +32,7 @@ router.get("/my",
 );
 
 router.get("/:tenantId/",
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema(`tenantId`) }),
     getAllBranches
 );
 
@@ -41,26 +42,31 @@ router.patch("/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager]),
     tenantAccess,
-    validate({ body: updateBranchSchema, params: idParamSchema }),
+    validate({ body: updateBranchSchema, params: idParamSchema() }),
     updateBranch
 );
 
 router.get("/:id",
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     getBranchById
 );
 
 router.delete("/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     deleteBranch
 );
 
 router.delete("/:id/hard",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin]),
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     hardDeleteBranch
 );
+
+router.get("/:branchId/batches",
+    validate({ params: idParamSchema(`branchId`) }),
+    getBranchBatches
+)
 export default router

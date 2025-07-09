@@ -36,7 +36,7 @@ router.route('/:id').patch(
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher, UserRoles.Student]),
     tenantAccess,
     validateUserUpdateAccess,
-    validate({ body: updateUserSchema, params: idParamSchema }),
+    validate({ body: updateUserSchema, params: idParamSchema() }),
     updateUserDetails
 );
 
@@ -45,7 +45,7 @@ export default router;
 
 //
 // router.get("/:id",
-//     validate({ params: idParamSchema }),
+//     validate({ params: idParamSchema() }),
 //     verifyToken,
 //     UserAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher, UserRoles.Student]),
 //     getProfile
@@ -53,7 +53,7 @@ export default router;
 // router.patch("/:id",
 //     verifyToken,
 //     UserAccess([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher, UserRoles.Student]),
-//     validate({ body: updateUserSchema, params: idParamSchema }),
+//     validate({ body: updateUserSchema, params: idParamSchema() }),
 //     updateUser
 // );
 

@@ -29,6 +29,7 @@ const BatchSchema: Schema<IBatchDocument> = new Schema<IBatchDocument>({
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });
 
+BatchSchema.index({ branchId: 1, courseId: 1 });
 BatchSchema.index({ tenantId: 1 });
 BatchSchema.index({ courseId: 1 });
 BatchSchema.index({ branchId: 1 });

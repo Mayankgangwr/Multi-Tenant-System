@@ -25,7 +25,7 @@ const TeacherMetaSchema: Schema<ITeacherMetaDataDocument> = new Schema<ITeacherM
 
 TeacherMetaSchema.index({ userId: 1 }, { unique: true });
 
-// Quickly find all teachers for a given batch:
+// Quickly find all teachers for a given batch
 TeacherMetaSchema.index({ batchIds: 1 });
 
 // Find teachers who joined at a certain time, or sort by join date:
@@ -42,5 +42,6 @@ TeacherMetaSchema.index({ specialization: 1 });
 
 // createdAt / updatedAt are already included in timestamps, but adding an index for sorting by newest:
 TeacherMetaSchema.index({ createdAt: -1 });
+
 
 export const TeacherMetaModel = model<ITeacherMetaDataDocument>('TeacherMetaData', TeacherMetaSchema);

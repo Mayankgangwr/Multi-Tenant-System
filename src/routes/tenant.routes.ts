@@ -8,6 +8,7 @@ import { UserRoles } from "../constants";
 import { authorizeRoles } from "../middlewares/Role.middleware";
 import { tenantAccess } from "../middlewares/tenant.middleware";
 import { getAllTenantCourses } from "../controllers/course.controller";
+import { getAllTenantBranches } from "../controllers/branch.controller";
 
 const router = Router();
 
@@ -31,33 +32,37 @@ router.get("/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
     tenantAccess,
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     getTenantById);
 
 router.patch("/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
     tenantAccess,
-    validate({ body: updateTenantSchema, params: idParamSchema }),
+    validate({ body: updateTenantSchema, params: idParamSchema() }),
     updateTenant);
 
 router.get("/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
     tenantAccess,
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     deleteTenant);
 
 router.get("/:id/hard",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin]),
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     hardDeleteTenant);
 
 router.get("/:tenantId/courses",
-    verifyToken,
-    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    validate({ params: idParamSchema(`tenantId`) }),
     getAllTenantCourses
+);
+
+router.get("/:tenantId/branches",
+    validate({ params: idParamSchema(`tenantId`) }),
+    getAllTenantBranches
 );
 
 

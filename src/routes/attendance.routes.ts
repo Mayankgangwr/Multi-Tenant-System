@@ -37,7 +37,7 @@ router.delete(
     "/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher]),
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     deleteAttendance
 );
 
@@ -46,7 +46,7 @@ router.delete(
     "/:id/hard",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin]),
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     hardDeleteAttendance
 );
 
@@ -80,7 +80,7 @@ router.patch(
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher]),
     tenantAccess,
-    validate({ body: updateAttendanceSchema, params: idParamSchema }),
+    validate({ body: updateAttendanceSchema, params: idParamSchema() }),
     updateAttendanceStatus
 );
 
@@ -89,7 +89,7 @@ router.get(
     "/student/:studentId/summary",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher]),
-    // validate({ params: idParamSchema }),
+    // validate({ params: idParamSchema() }),
     getStudentSummary
 );
 
@@ -98,7 +98,7 @@ router.get(
     "/batch/:batchId/summary",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher]),
-    // validate({ params: idParamSchema }),
+    // validate({ params: idParamSchema() }),
     getBatchSummary
 );
 
@@ -107,7 +107,7 @@ router.delete(
     "/batch/:batchId",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
-    validate({ params: idParamSchema }),
+    validate({ params: idParamSchema() }),
     deleteBatchAttendance
 );
 

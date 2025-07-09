@@ -52,15 +52,6 @@ class BranchService {
     const branches = await branchRepository.model.aggregate([
       { $match: filterQuery },
       {
-        $lookup: {
-          from: "tenants",
-          foreignField: "_id",
-          localField: "tenantId",
-          as: "organization"
-        }
-      },
-      { $unwind: { path: "$organization", preserveNullAndEmptyArrays: true } },
-      {
         $project: {
           _id: 1,
           name: 1,
@@ -72,12 +63,6 @@ class BranchService {
           holidays: 1,
           staweeklyOfftus: 1,
           isDelete: 1,
-          organization: {
-            _id: "$organization._id",
-            name: "$organization.name",
-            email: "$organization.email",
-            status: "$organization.status"
-          }
         }
       },
 

@@ -31,7 +31,7 @@ router.get(
 
 router.get(
   "/:id",
-  validate({ params: idParamSchema }),
+  validate({ params: idParamSchema() }),
   getPlanById
 );
 
@@ -39,7 +39,7 @@ router.patch(
   "/:id",
   verifyToken,
   authorizeRoles([UserRoles.SuperAdmin]),
-  validate({ params: idParamSchema, body: updatePlanSchema }),
+  validate({ params: idParamSchema(), body: updatePlanSchema }),
   updatePlan
 );
 
@@ -47,7 +47,7 @@ router.delete(
   "/:id",
   verifyToken,
   authorizeRoles([UserRoles.SuperAdmin]),
-  validate({ params: idParamSchema }),
+  validate({ params: idParamSchema() }),
   deletePlan
 );
 
@@ -55,7 +55,7 @@ router.delete(
   "/:id/hard",
   verifyToken,
   authorizeRoles([UserRoles.SuperAdmin]),
-  validate({ params: idParamSchema }),
+  validate({ params: idParamSchema() }),
   hardDeletePlan
 );
 

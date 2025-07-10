@@ -184,90 +184,116 @@ class CourseService {
         const filterQuery = buildCourseFilter(filter);
         const paginationOptions = generatePaginationOptions(filter);
         const { skip, limit, sort } = paginationOptions;
+
         const tenantLookup = {
             $lookup: {
                 from: 'tenants',
                 let: { tenantId: '$tenantId' },
                 pipeline: [
-                    { $match: { $expr: { $eq: ['$_id', '$$tenantId'] } } },
-                    { $project: { _id: 1, name: 1, email: 1, contactPhone: 1, status: 1 } }
-                ],
-                as: 'organization',
-            },
-        };
-
-        const batchesLookup = {
-            $lookup: {
-                from: 'batches',
-                let: { branchId: '$_id', courseId: '$$courseId' },
-                pipeline: [
                     {
                         $match: {
                             $expr: {
-                                $and: [
-                                    { $eq: ['$branchId', '$$branchId'] },
-                                    { $eq: ['$courseId', '$$courseId'] }
-                                ]
+                                $eq: ['$_id', '$$tenantId']
                             }
                         }
                     },
                     {
-                        $lookup: {
-                            from: 'users',
-                            let: { teacherId: '$teacherId' },
-                            pipeline: [
-                                { $match: { $expr: { $eq: ['$_id', '$$teacherId'] } } },
-                                {
-                                    $lookup: {
-                                        from: 'teachermetadatas',
-                                        localField: '_id',
-                                        foreignField: 'userId',
-                                        as: 'profile'
-                                    }
-                                },
-                                { $unwind: { path: '$profile', preserveNullAndEmptyArrays: true } },
-                                {
-                                    $project: {
-                                        _id: 1,
-                                        name: 1,
-                                        qualification: '$profile.qualification',
-                                        specialization: '$profile.specialization',
-                                        experience: '$profile.experience',
-                                        certifications: '$profile.certifications',
-                                        joinedAt: '$profile.joinedAt'
-                                    }
-                                }
-                            ],
-                            as: 'teacher'
-                        }
-                    },
-                    { $unwind: { path: '$teacher', preserveNullAndEmptyArrays: true } },
-                    {
                         $project: {
                             _id: 1,
-                            schedule: 1,
-                            maxCapacity: 1,
-                            isFull: 1,
-                            remainingSheets: 1,
-                            teacher: 1,
+                            name: 1,
+                            email: 1,
+                            contactPhone: 1,
+                            status: 1
                         }
                     }
                 ],
-                as: 'batches',
+                as: 'organization'
             }
         };
 
         const branchesLookup = {
             $lookup: {
                 from: 'branches',
-                let: { tenantId: '$organization._id', courseId: '$_id' },
+                let: {
+                    tenantId: '$organization._id',
+                    courseId: '$_id' // 👈 define courseId here so it is available
+                },
                 pipeline: [
                     {
                         $match: {
-                            $expr: { $eq: ['$tenantId', '$$tenantId'] }
+                            $expr: {
+                                $eq: ['$tenantId', '$$tenantId']
+                            }
                         }
                     },
-                    batchesLookup,
+                    {
+                        $lookup: {
+                            from: 'batches',
+                            let: {
+                                branchId: '$_id',
+                                courseId: '$$courseId'
+                            },
+                            pipeline: [
+                                {
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                { $eq: ['$branchId', '$$branchId'] },
+                                                { $eq: ['$courseId', '$$courseId'] }
+                                            ]
+                                        }
+                                    }
+                                },
+                                {
+                                    $lookup: {
+                                        from: 'users',
+                                        let: { teacherIds: '$teacherIds' },
+                                        pipeline: [
+                                            {
+                                                $match: {
+                                                    $expr: {
+                                                        $in: ['$_id', '$$teacherIds']
+                                                    }
+                                                }
+                                            },
+                                            {
+                                                $lookup: {
+                                                    from: 'teachermetadatas',
+                                                    localField: '_id',
+                                                    foreignField: 'userId',
+                                                    as: 'profile'
+                                                }
+                                            },
+                                            { $unwind: { path: '$profile', preserveNullAndEmptyArrays: true } },
+                                            {
+                                                $project: {
+                                                    _id: 1,
+                                                    name: 1,
+                                                    qualification: '$profile.qualification',
+                                                    specialization: '$profile.specialization',
+                                                    experience: '$profile.experience',
+                                                    certifications: '$profile.certifications',
+                                                    joinedAt: '$profile.joinedAt'
+                                                }
+                                            }
+                                        ],
+                                        as: 'teachers'
+                                    }
+                                },
+                                {
+                                    $project: {
+                                        _id: 1,
+                                        schedule: 1,
+                                        maxCapacity: 1,
+                                        isFull: 1,
+                                        remainingSheets: 1,
+                                        teachers: 1,
+                                    }
+                                }
+                            ],
+                            as: 'batches'
+                        }
+                    },
                     {
                         $project: {
                             _id: 1,
@@ -279,11 +305,11 @@ class CourseService {
                             isMainBranch: 1,
                             holidays: 1,
                             weeklyOff: 1,
-                            batches: 1,
+                            batches: 1
                         }
                     }
                 ],
-                as: 'branches',
+                as: 'branches'
             }
         };
 
@@ -309,7 +335,7 @@ class CourseService {
                     isDelete: 1,
                     status: 1,
                     organization: 1,
-                    branches: 1,
+                    branches: 1
                 }
             },
             { $sort: sort },
@@ -318,11 +344,15 @@ class CourseService {
         ];
 
         const courses = await courseRepository.model.aggregate(pipeline).exec();
+
         if (!courses || courses.length === 0) {
-            throw ApiError.notFound("No courses found.");
+            throw ApiError.notFound('No courses found.');
         }
+
         return courses;
     }
+
+
 
     public async delete(id: string, tenantId: Types.ObjectId): Promise<boolean> {
         const isDeleted = await courseRepository.delete(id, tenantId);

@@ -5,7 +5,7 @@ export interface IBatchDocument extends Document {
   tenantId: Types.ObjectId;
   courseId: Types.ObjectId;
   branchId: Types.ObjectId;
-  teacherId: Types.ObjectId;
+  teacherIds: Types.ObjectId[];
   studentIds: Types.ObjectId[];
   schedule: Date;
   maxCapacity?: number;
@@ -20,7 +20,7 @@ const BatchSchema: Schema<IBatchDocument> = new Schema<IBatchDocument>({
   courseId: { type: Schema.Types.ObjectId, ref: 'Course', required: true },
   branchId: { type: Schema.Types.ObjectId, ref: 'Branch', required: true },
   studentIds: [{ type: Schema.Types.ObjectId, ref: 'User', default: null }],
-  teacherId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  teacherIds: [{ type: Schema.Types.ObjectId, ref: 'User', default: null }],
   schedule: { type: Date, required: true },
   maxCapacity: { type: Number, default: 0 },
   remainingSheets: { type: Number, default: 0 },
@@ -33,7 +33,6 @@ BatchSchema.index({ branchId: 1, courseId: 1 });
 BatchSchema.index({ tenantId: 1 });
 BatchSchema.index({ courseId: 1 });
 BatchSchema.index({ branchId: 1 });
-BatchSchema.index({ teacherId: 1 });
 BatchSchema.index({ createdAt: -1 });
 
 export const BatchModel = model<IBatchDocument>('Batch', BatchSchema);

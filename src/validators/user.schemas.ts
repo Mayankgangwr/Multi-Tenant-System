@@ -1,87 +1,155 @@
 import { z } from "zod";
+import { UserRoles } from "../constants";
 import { isPasswordStrong } from "../utils/isPasswordStrong";
-import { UserRoles, Role } from "../constants";
-import { objectId } from "./IdParam.schema";
+
+// Basic ObjectId check for ids
+const objectId = z
+  .string()
+  .regex(/^[0-9a-fA-F]{24}$/, "Invalid ObjectId format");
+
+// Username must be unique & alphanumeric
+const usernameSchema = z
+  .string()
+  .min(4, "Username must be at least 4 characters")
+  .max(30, "Username must be at most 30 characters")
+  .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain alphanumeric characters & underscores");
+
+// Phone is optional but if present must be valid
+const phoneSchema = z
+  .string()
+  .min(7, "Phone must be at least 7 digits")
+  .max(15, "Phone must be at most 15 digits")
+  .regex(/^[0-9]+$/, "Phone must only contain digits")
+  .optional();
 
 export const registerSchema = z
   .object({
-    name: z.string().min(3, "Name must be at least 3 characters!"),
+    name: z.string().min(3, "Name must be at least 3 characters"),
 
-    username: z
-      .string()
-      .min(4, "Username must be at least 4 characters long!")
-      .max(30, "Username must be at most 30 characters!")
-      .regex(/^[a-zA-Z0-9]+$/, "Username must be alphanumeric with no spaces or special characters!"),
+    username: usernameSchema,
 
-    email: z.string().email("Invalid email format!"),
+    email: z.string().email("Invalid email"),
+
+    phone: phoneSchema,
 
     password: z
       .string()
-      .min(8, "Password must be at least 8 characters!")
-      .regex(/[a-z]/, "Password must contain a lowercase letter!")
-      .regex(/[A-Z]/, "Password must contain an uppercase letter!")
-      .regex(/[0-9]/, "Password must contain a number!"),
+      .min(8, "Password must be at least 8 characters")
+      .refine(isPasswordStrong, {
+        message:
+          "Password must include at least one lowercase, one uppercase, and one number",
+      }),
+
+    profileImage: z.string().url("Profile image must be a valid URL").optional(),
 
     role: z
       .string()
       .refine(
-        (val): val is keyof typeof UserRoles =>
-          Object.values(UserRoles).includes(val as UserRoles),
-        { message: "Invalid role provided!" }
+        (val): val is UserRoles => Object.values(UserRoles).includes(val as UserRoles),
+        { message: "Invalid role" }
       ),
 
-    tenantId: z.string().optional(),
-    branchId: z.string().optional(),
+    tenantId: objectId.optional(),
+    branchId: objectId.optional(),
+    batchIds: z.array(objectId).optional(),
   })
   .superRefine((data, ctx) => {
     const { role, tenantId, branchId } = data;
 
-    if (role !== UserRoles.SuperAdmin) {
+    if (["TenantAdmin", "BranchManager"].includes(role)) {
       if (!tenantId) {
         ctx.addIssue({
           path: ["tenantId"],
           code: z.ZodIssueCode.custom,
-          message: "tenantId is required for selected roles.",
+          message: "tenantId is required for TenantAdmin and BranchManager",
         });
       }
+    }
 
-      if (![UserRoles.SuperAdmin, UserRoles.TenantAdmin].includes(role as UserRoles) && !branchId) {
+    if (role === "BranchManager" && !branchId) {
+      ctx.addIssue({
+        path: ["branchId"],
+        code: z.ZodIssueCode.custom,
+        message: "branchId is required for BranchManager",
+      });
+    }
+
+    if (role === "Student" || role === "Teacher") {
+      if (!data.batchIds || data.batchIds.length === 0) {
         ctx.addIssue({
-          path: ["branchId"],
+          path: ["batchIds"],
           code: z.ZodIssueCode.custom,
-          message: "branchId is required for selected roles.",
+          message: "At least one batchId is required for Student and Teacher",
         });
       }
     }
   });
 
-
-
 export const updateUserSchema = z
   .object({
+    name: z.string().min(3, "Name must be at least 3 characters").optional(),
 
-    name: z.string().min(3, "Name must be at least 3 characters.").optional(),
-    username: z
+    username: usernameSchema.optional(),
+
+    email: z.string().email("Invalid email").optional(),
+
+    phone: phoneSchema,
+
+    profileImage: z.string().url("Profile image must be a valid URL").optional(),
+
+    password: z
       .string()
-      .min(3, "Username must be at least 3 characters.")
-      .regex(/^[a-zA-Z0-9_]+$/, "Username can only contain alphanumeric characters and underscores.")
+      .min(8, "Password must be at least 8 characters")
+      .refine(isPasswordStrong, {
+        message:
+          "Password must include at least one lowercase, one uppercase, and one number",
+      })
       .optional(),
-    email: z.string().email("Invalid email format.").optional(),
-    phone: z
+
+    role: z
       .string()
-      .min(7, "Phone number must be at least 7 digits.")
-      .max(15, "Phone number can't be longer than 15 digits.")
-      .regex(/^[0-9]+$/, "Phone number must contain only digits.")
+      .refine(
+        (val): val is UserRoles => Object.values(UserRoles).includes(val as UserRoles),
+        { message: "Invalid role" }
+      )
       .optional(),
-    profileImage: z.string().url("Profile image must be a valid URL.").optional(),
-    tenantId: z.string().optional(),
+
+    tenantId: objectId.optional(),
+    branchId: objectId.optional(),
+    batchIds: z.array(objectId).optional(),
   })
   .strict({
     message: "One or more unexpected fields were provided.",
-  }) // ⛔ will throw if any extra field is passed
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field must be provided to update.",
+  })
+  .superRefine((data, ctx) => {
+    if (Object.keys(data).length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "At least one field must be provided to update.",
+      });
+    }
+
+    const { role, tenantId, branchId } = data;
+
+    if (role && ["TenantAdmin", "BranchManager"].includes(role)) {
+      if (!tenantId) {
+        ctx.addIssue({
+          path: ["tenantId"],
+          code: z.ZodIssueCode.custom,
+          message: "tenantId is required for TenantAdmin and BranchManager",
+        });
+      }
+    }
+
+    if (role === "BranchManager" && !branchId) {
+      ctx.addIssue({
+        path: ["branchId"],
+        code: z.ZodIssueCode.custom,
+        message: "branchId is required for BranchManager",
+      });
+    }
   });
+
 
 export const changePasswordSchema = z
   .object({

@@ -46,7 +46,7 @@ export const getAllTenantBatches = asyncHandler(async (req: Request, res: Respon
 export const getBranchBatches = asyncHandler(async (req: Request, res: Response) => {
      const branchId = req.params.branchId;
     if (!branchId) throw ApiError.badRequest('branch id missing.');
-    const batches = await batchService.getAll({ ...req.query, branchId });
+    const batches = await batchService.branchBatches({ ...req.query, branchId });
     res.status(200)
         .json({ statusCode: 200, status: true, data: batches, message: "Batch list fetched successfully." });
 })

@@ -3,6 +3,8 @@ import { AuthRequest } from "../types/AuthResponse";
 import { asyncHandler } from "../utils/asyncHandler";
 import ApiError from "../utils/apiError";
 import studentMetaService from "../services/student-meta.service";
+import mongoose from "mongoose";
+import enrollmentService from "../services/enrollment.service";
 
 export const insertStudentMeta = asyncHandler(async (req: AuthRequest, res: Response) => {
     const userId = req.user?._id;
@@ -33,4 +35,13 @@ export const updateStudentMeta = asyncHandler(async (req: AuthRequest, res: Resp
         data: meta,
         message: "Student profile updated successfully.",
     });
+});
+
+export const enrollBatch = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const batchId = req.params.batchId ? new mongoose.Types.ObjectId(req.params.batchId) : undefined;
+    const studentId = req.user?._id || undefined;
+    const enroll = await enrollmentService.create({ ...req.body, batchId, studentId });
+
+
+
 });

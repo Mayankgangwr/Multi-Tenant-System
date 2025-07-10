@@ -15,6 +15,7 @@ import { createBatchSchema, updateBatchSchema } from "../validators/batch.schema
 import { UserRoles } from "../constants";
 import { authorizeRoles } from "../middlewares/Role.middleware";
 import { tenantAccess } from "../middlewares/tenant.middleware";
+import { getBatchEnrollments } from "../controllers/enrollment.controller";
 
 const router = Router();
 
@@ -56,6 +57,7 @@ router.delete(
     "/:id",
     verifyToken,
     authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager]),
+    tenantAccess,
     validate({ params: idParamSchema() }),
     deleteBatch
 );
@@ -67,5 +69,15 @@ router.delete(
     validate({ params: idParamSchema() }),
     hardDeleteBatch
 );
+
+router.get(
+    "/:batchId/students",
+    verifyToken,
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager]),
+    tenantAccess,
+    validate({ params: idParamSchema(`batchId`) }),
+    getBatchEnrollments
+);
+
 
 export default router;

@@ -33,7 +33,7 @@ router.route('/me').get(verifyToken, getCurrentUser);
 
 router.route('/:id').patch(
     verifyToken,
-    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher, UserRoles.Student]),
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager]),
     tenantAccess,
     validateUserUpdateAccess,
     validate({ body: updateUserSchema, params: idParamSchema() }),

@@ -11,7 +11,7 @@ class BatchService {
             tenantId: data.tenantId,
             courseId: data.courseId,
             branchId: data.branchId,
-            teacherId: data.teacherId,
+            teacherIds: { $in: data.teacherIds },
             schedule: data.schedule,
             deletedAt: { $exists: false },
         });
@@ -33,7 +33,7 @@ class BatchService {
             tenantId: data.tenantId,
             courseId: data.courseId,
             branchId: data.branchId,
-            teacherId: data.teacherId,
+            teacherIds: { $in: data.teacherIds },
             schedule: data.schedule,
             deletedAt: { $exists: false },
         });
@@ -218,6 +218,93 @@ class BatchService {
         if (!isDeleted) throw ApiError.internal("Failed to hard delete batch.");
         return true;
     }
+
+    public async branchBatches(query: Record<string, any>) {
+        const filterQuery = buildBatchFilter(query);
+        const { skip, limit, sort } = generatePaginationOptions(query);
+
+        const batches = await batchRepository.model.aggregate([
+            { $match: filterQuery },
+
+            {
+                $lookup: {
+                    from: "courses",
+                    localField: "courseId",
+                    foreignField: "_id",
+                    as: "course",
+                },
+            },
+            { $unwind: { path: "$course", preserveNullAndEmptyArrays: true } },
+
+            {
+                $lookup: {
+                    from: "users",
+                    let: { teacherIds: "$teacherIds" },
+                    pipeline: [
+                        { $match: { $expr: { $in: ["$_id", "$$teacherIds"] } } },
+
+                        {
+                            $lookup: {
+                                from: "teachermetadatas",
+                                localField: "_id",
+                                foreignField: "userId",
+                                as: "profile",
+                            },
+                        },
+                        {
+                            $addFields: {
+                                profile: { $arrayElemAt: ["$profile", 0] },
+                            },
+                        },
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1,
+                                qualification: "$profile.qualification",
+                                specialization: "$profile.specialization",
+                                experience: "$profile.experience",
+                                certifications: "$profile.certifications",
+                                joinedAt: "$profile.joinedAt",
+                            },
+                        },
+                    ],
+                    as: "teachers",
+                },
+            },
+
+            {
+                $project: {
+                    _id: 1,
+                    courseId: "$course._id",
+                    courseName: "$course.name",
+                    courseDescription: "$course.description",
+                    courseCategory: "$course.category",
+                    courseLevel: "$course.level",
+                    courseDuration: "$course.duration",
+                    courseImageUrl: "$course.imageUrl",
+                    courseFee: "$course.fee",
+                    courseStatus: "$course.status",
+                    teachers: 1,
+                    schedule: 1,
+                    maxCapacity: 1,
+                    isFull: 1,
+                    status: 1,
+                    isDelete: 1,
+                },
+            },
+
+            { $sort: sort },
+            { $skip: skip },
+            { $limit: limit },
+        ]).exec();
+
+        if (!batches?.length) {
+            throw ApiError.notFound("No batches found.");
+        }
+
+        return batches;
+    }
+
 }
 
 const batchService = new BatchService();

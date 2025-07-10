@@ -14,7 +14,7 @@ class AttendanceService {
         if (user.role === UserRoles.Teacher && data.batchId) {
             const batch = await batchRepository.findById(data.batchId.toString());
             if (!batch) throw ApiError.badRequest("Invalid batch.");
-            if (!batch.teacherId.equals(user._id)) {
+            if (!batch.teacherIds.some((ids: Types.ObjectId) => ids.equals(user._id))) {
                 throw ApiError.unauthorized("You can only manage attendance for your own batch.");
             }
         }
@@ -61,7 +61,7 @@ class AttendanceService {
                 throw ApiError.badRequest("Associated batch not found.");
             }
 
-            if (!batch.teacherId.equals(user._id)) {
+            if (!batch.teacherIds.some((ids: Types.ObjectId) => ids.equals(user._id))) {
                 throw ApiError.unauthorized("You can only delete attendance for your own batch.");
             }
         }
@@ -162,7 +162,7 @@ class AttendanceService {
         if (user.role === UserRoles.Teacher) {
             const batch = await batchRepository.findById(attendance.batchId.toString());
             if (!batch) throw ApiError.badRequest("Invalid batch.");
-            if (!batch.teacherId.equals(user._id)) {
+            if (!batch.teacherIds.some((ids: Types.ObjectId) => ids.equals(user._id))) {
                 throw ApiError.unauthorized("You can only update attendance for your own batch.");
             }
         }

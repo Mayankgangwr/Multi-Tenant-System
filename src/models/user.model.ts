@@ -3,14 +3,14 @@ import { UserRoles } from '../constants';
 import ApiError from '../utils/apiError';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import configENV from '../config/configENV';
+import configENV from '../config/env.config';
 
 export interface IUserDocument extends Document {
   _id: Types.ObjectId;
   name: string;
   username: string;
   email: string;
-  phone?: string;
+  phone: string;
   password: string;
   profileImage?: string;
   role: UserRoles;
@@ -42,7 +42,7 @@ const UserSchema: Schema<IUserDocument> = new Schema<IUserDocument>(
       match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
     },
     username: { type: String, required: true, unique: true, index: true },
-    phone: { type: String },
+    phone: { type: String, required: true },
     password: { type: String, required: true },
     profileImage: { type: String },
 

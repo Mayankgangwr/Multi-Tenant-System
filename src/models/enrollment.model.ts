@@ -12,6 +12,8 @@ export interface IEnrollmentDocument extends Document {
         status: 'unpaid' | 'partial' | 'paid';
     };
     status: 'active' | 'completed' | 'cancelled';
+    cashfreeOrderId?: string;
+    paymentSessionId?: string;
 }
 
 const EnrollmentSchema: Schema<IEnrollmentDocument> = new Schema<IEnrollmentDocument>(
@@ -35,6 +37,8 @@ const EnrollmentSchema: Schema<IEnrollmentDocument> = new Schema<IEnrollmentDocu
             enum: ['active', 'completed', 'cancelled'],
             default: 'active',
         },
+        cashfreeOrderId: { type: String },
+        paymentSessionId: { type: String }
     },
     { timestamps: true }
 );

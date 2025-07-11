@@ -40,8 +40,13 @@ export const updateStudentMeta = asyncHandler(async (req: AuthRequest, res: Resp
 export const enrollBatch = asyncHandler(async (req: AuthRequest, res: Response) => {
     const batchId = req.params.batchId ? new mongoose.Types.ObjectId(req.params.batchId) : undefined;
     const studentId = req.user?._id || undefined;
-    const enroll = await enrollmentService.create({ ...req.body, batchId, studentId });
+    await enrollmentService.create({ ...req.body, batchId, studentId });
 
+    res.status(200).json({
+        statusCode: 200,
+        status: true,
+        message: "Student has been  enrolled successfully.",
+    });
 
 
 });

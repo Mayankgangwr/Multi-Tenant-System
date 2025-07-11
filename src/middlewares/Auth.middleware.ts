@@ -1,6 +1,6 @@
 import { Response, NextFunction } from "express";
 import { decodedJWT } from "../utils/jwt";
-import configENV from "../config/configENV";
+import configENV from "../config/env.config";
 import ApiError from "../utils/apiError";
 import { AuthRequest } from "../types/AuthResponse";
 import userRepository from "../repositories/user.repository";

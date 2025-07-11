@@ -1,4 +1,4 @@
-import configENV from "../config/configENV";
+import configENV from "../config/env.config";
 import { IUserDocument } from "../models/user.model";
 import userRepository from "../repositories/user.repository";
 import { IAuthResponse } from "../types/AuthResponse";

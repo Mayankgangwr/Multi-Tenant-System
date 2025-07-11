@@ -1,6 +1,6 @@
 import app from './app';
-import connectDB from './config/dbConfig';
-import configENV from './config/configENV';
+import connectDB from './config/db.config';
+import configENV from './config/env.config';
 
 
 connectDB()

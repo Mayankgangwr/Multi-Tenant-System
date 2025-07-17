@@ -41,17 +41,6 @@ router.post("/:batchId/enroll",
     enrollBatch
 );
 
-// router.post("/create-order",
-//     asyncHandler(async (req: Request, res: Response) => {
-//         const paymentOrder = await cashfreeService.createOrder();
-//         res.status(201).json({
-//             statusCode: 201,
-//             status: true,
-//             data: paymentOrder,
-//             message: "Batch payment order has been successfully.",
-//         });
-//     })
-// );
 
 router.post("/pay-order",
     asyncHandler(async (req: Request, res: Response) => {

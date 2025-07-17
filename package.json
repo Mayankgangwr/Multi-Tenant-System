@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ngrok/ngrok": "^1.5.1",
     "bcryptjs": "^3.0.2",
     "cashfree-pg": "^5.0.8",
     "cookie-parser": "^1.4.7",

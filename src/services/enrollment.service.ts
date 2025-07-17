@@ -31,10 +31,7 @@ class EnrollmentService {
             status: { $ne: "cancelled" },
         });
 
-        if (existingEnrollment)
-            throw ApiError.badRequest(
-                "Student is already enrolled in this batch."
-            );
+        if (existingEnrollment) throw ApiError.badRequest("Student is already enrolled in this batch.");
 
         const batch = await batchRepository.findById(String(batchId));
         if (!batch) throw ApiError.notFound("Batch not found.");

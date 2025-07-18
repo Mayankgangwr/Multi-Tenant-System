@@ -82,21 +82,12 @@ const UserSchema: Schema<IUserDocument> = new Schema<IUserDocument>(
   },
   {
     timestamps: true,
-    toJSON: {
-      transform(doc, ret) {
-        delete ret.password;
-        delete ret.refreshToken;
-        return ret;
-      },
-    },
   }
 );
 
 // 📄 Useful indexes
 UserSchema.index({ tenantId: 1, isDelete: 1 });
-UserSchema.index({ tenantId: 1, isDelete: 1 });
 UserSchema.index({ tenantId: 1, role: 1, isDelete: 1 });
-UserSchema.index({ tenantId: 1, isDelete: 1 });
 UserSchema.index({ _id: 1, tenantId: 1, isDelete: 1 });
 UserSchema.index({ batchIds: 1, role: 1, isDelete: 1 });
 

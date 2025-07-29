@@ -51,7 +51,6 @@ export const registerSchema = z
 
     tenantId: objectId.optional(),
     branchId: objectId.optional(),
-    batchIds: z.array(objectId).optional(),
   })
   .superRefine((data, ctx) => {
     const { role, tenantId, branchId } = data;
@@ -72,16 +71,6 @@ export const registerSchema = z
         code: z.ZodIssueCode.custom,
         message: "branchId is required for BranchManager",
       });
-    }
-
-    if (role === "Student" || role === "Teacher") {
-      if (!data.batchIds || data.batchIds.length === 0) {
-        ctx.addIssue({
-          path: ["batchIds"],
-          code: z.ZodIssueCode.custom,
-          message: "At least one batchId is required for Student and Teacher",
-        });
-      }
     }
   });
 

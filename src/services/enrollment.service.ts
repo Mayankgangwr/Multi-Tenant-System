@@ -1,26 +1,43 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import enrollmentRepository from "../repositories/enrollment.repository";
 import { IEnrollmentDocument } from "../models/enrollment.model";
 import ApiError from "../utils/apiError";
 import batchRepository from "../repositories/batch.repository";
 import courseRepository from "../repositories/course.repository";
 import userRepository from "../repositories/user.repository";
-import cashfreeService from "./cashfree.service";
 import { CreateOrderRequest } from "cashfree-pg";
 import moment from "moment";
+import cashfreeService from "./cashfree.service";
+import paymentService from "./payment.service";
+import { IBatchDocument } from "../models/batch.model";
+import studentMetaService from "./student-meta.service";
 class EnrollmentService {
-    /**
-     * Create a new enrollment for a student in a batch.
-     * Checks if already enrolled before creating.
-     */
-    public async create(data: Partial<IEnrollmentDocument>): Promise<{
-        paymentUrl: string;
-        orderId: string;
-        paymentSessionId: string;
-        enrollmentId: string;
-    }> {
-        const { studentId, batchId } = data;
 
+    public async enroll(data: Partial<IEnrollmentDocument>): Promise<IEnrollmentDocument> {
+        const { studentId, batchId } = data
+        if (!studentId || !batchId) {
+            throw ApiError.badRequest("Student and batch both IDs are required.");
+        }
+
+        const existingEnrollment = await enrollmentRepository.model.findOne({
+            studentId,
+            batchId,
+            status: { $ne: "cancelled" },
+        });
+
+        if (existingEnrollment) throw ApiError.badRequest("Student is already enrolled in this batch.");
+
+        const enroll = await enrollmentRepository.create(data);
+
+        if (!enroll) throw ApiError.internal(`Failed to insert the enroll`);
+
+        return enroll
+
+
+
+    }
+
+    public async createPaymentIntent(batchId: mongoose.Types.ObjectId, studentId: mongoose.Types.ObjectId) {
         if (!studentId || !batchId) {
             throw ApiError.badRequest("Student and batch both IDs are required.");
         }
@@ -42,37 +59,6 @@ class EnrollmentService {
         const student = await userRepository.findById(String(studentId));
         if (!student) throw ApiError.notFound("Student not found.");
 
-        // Create enrollment
-        const enrollmentPayload: Partial<IEnrollmentDocument> = {
-            studentId,
-            batchId,
-            fee: {
-                amount: course.fee,
-                currency: "INR",
-                paid: 0,
-                due: course.fee,
-                status: "unpaid",
-            },
-        };
-
-        const enrollment = await enrollmentRepository.create(enrollmentPayload);
-        if (!enrollment?._id) {
-            throw ApiError.internal("Failed to create enrollment.");
-        }
-
-        // Update batch
-        if (!batch.studentIds.includes(studentId)) {
-            batch.studentIds.push(studentId);
-        }
-        await batch.save({ validateBeforeSave: false });
-
-        // Update student
-        if (!student.batchIds?.includes(batchId)) {
-            student.batchIds?.push(batchId);
-        }
-        await student.save({ validateBeforeSave: false });
-
-        // Build Cashfree order payload
         const paymentPayload: CreateOrderRequest = {
             order_amount: course.fee,
             order_currency: "INR",
@@ -96,46 +82,23 @@ class EnrollmentService {
             },
             order_expiry_time: moment().add(1, "hour").toISOString(),
             order_note: `Enrolled for ${course.name}`,
-            order_meta: {
-                return_url:
-                    `https://www.cashfree.com/devstudio/preview/pg/seamless?order_id={order_id}`,
-                notify_url:
-                    `https://www.cashfree.com/devstudio/preview/pg/webhooks/20510240`,
-            },
         };
 
-        // Create order in Cashfree
-        const createdPaymentOrder = await cashfreeService.createOrder(paymentPayload);
-        if (!createdPaymentOrder?.payment_session_id || !createdPaymentOrder?.order_id) {
-            throw ApiError.internal("Failed to create payment order.");
-        }
+        const response = await cashfreeService.createOrder(paymentPayload);
+        await paymentService.create({
+            tenantId: course.tenantId,
+            studentId: student._id,
+            batchId: batchId,
+            order_id: response.order_id,
+            amount: course.fee,
+            currency: "INR",
+        });
 
-        // Save order/session IDs in enrollment
-        enrollment.cashfreeOrderId = createdPaymentOrder.order_id;
-        enrollment.paymentSessionId = createdPaymentOrder.payment_session_id;
-        await enrollment.save();
 
-        // Pay order
-        const paymentResponse = await cashfreeService.payOrder(
-            createdPaymentOrder.payment_session_id
-        );
 
-        if (!paymentResponse?.data?.url) {
-            throw ApiError.internal("Failed to initiate payment.");
-        }
-        return {
-            paymentUrl: paymentResponse.data.url,
-            orderId: createdPaymentOrder?.[`order_id`],
-            paymentSessionId: createdPaymentOrder.payment_session_id,
-            enrollmentId: enrollment._id.toString(),
-        };
+        return response;
     }
 
-
-
-    /**
-     * Update an existing enrollment
-     */
     public async update(
         filter: Record<string, any>,
         data: Partial<IEnrollmentDocument>
@@ -145,9 +108,6 @@ class EnrollmentService {
         return updated;
     }
 
-    /**
-     * Get all enrollments for a student
-     */
     public async getByStudent(studentId: string): Promise<IEnrollmentDocument[]> {
         return enrollmentRepository.model
             .find({
@@ -158,9 +118,6 @@ class EnrollmentService {
             .lean();
     }
 
-    /**
-     * Get all students enrolled in a batch
-     */
     public async getByBatch(batchId: string): Promise<IEnrollmentDocument[]> {
         return enrollmentRepository.model
             .find({
@@ -170,6 +127,57 @@ class EnrollmentService {
             .populate("studentId")
             .lean();
     }
+
+    public async configStudentBatch(
+        batchId: Types.ObjectId,
+        studentId: Types.ObjectId,
+        isRemove: boolean = false
+    ): Promise<{ batch: IBatchDocument; student: any }> {
+        const batch = await batchRepository.findById(batchId.toString());
+        if (!batch) {
+            throw ApiError.badRequest('Invalid batch Id.');
+        }
+
+        const student = await studentMetaService.getStudentMeta(studentId);
+        if (!student) {
+            throw ApiError.notFound("Student not found.");
+        }
+
+        if (!batch.studentIds) batch.studentIds = [];
+        if (!student.batchIds) student.batchIds = [];
+
+        const isExistInBatch = batch.studentIds.some(
+            (id) => id.toString() === studentId.toString()
+        );
+
+        if (isExistInBatch && !isRemove) {
+            throw ApiError.conflict("You have already purchased this batch.");
+        }
+
+        if (!isExistInBatch && isRemove) {
+            throw ApiError.notFound("Student is not enrolled in this batch.");
+        }
+
+        if (isRemove) {
+            batch.studentIds = batch.studentIds.filter(
+                (id) => id.toString() !== studentId.toString()
+            );
+            student.batchIds = student.batchIds.filter(
+                (id) => id.toString() !== batchId.toString()
+            );
+        } else {
+            batch.studentIds.push(studentId);
+            student.batchIds.push(batchId);
+        }
+
+        await Promise.all([
+            batch.save({ validateBeforeSave: false }),
+            student.save({ validateBeforeSave: false }),
+        ]);
+
+        return { batch, student };
+    }
+
 }
 
 const enrollmentService = new EnrollmentService();

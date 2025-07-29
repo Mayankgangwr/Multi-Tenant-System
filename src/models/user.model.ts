@@ -16,7 +16,6 @@ export interface IUserDocument extends Document {
   role: UserRoles;
   tenantId?: Types.ObjectId;
   branchId?: Types.ObjectId;
-  batchIds?: Types.ObjectId[];
   refreshToken?: string;
   lastLoginAt?: Date;
   isLoggedIn: boolean;
@@ -65,15 +64,6 @@ const UserSchema: Schema<IUserDocument> = new Schema<IUserDocument>(
       },
       index: true,
     },
-
-    batchIds: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Batch',
-        default: [],
-      },
-    ],
-
     refreshToken: { type: String },
     lastLoginAt: { type: Date },
     isLoggedIn: { type: Boolean, default: false },
@@ -137,7 +127,7 @@ UserSchema.methods.generateAccessToken = function (): string {
       email: this.email,
       role: this.role,
     },
-    configENV.ACCESS_TOKEN_SECRET,
+    configENV.accessTokenSecret,
     { expiresIn: '1d' }
   );
 };
@@ -149,7 +139,7 @@ UserSchema.methods.generateRefreshToken = function (): string {
       id: this._id.toString(),
       role: this.role,
     },
-    configENV.REFRESH_TOKEN_SECRET,
+    configENV.refreshTokenSecret,
     { expiresIn: '7d' }
   );
 };
@@ -157,7 +147,7 @@ UserSchema.methods.generateRefreshToken = function (): string {
 // 🔷 Method to validate refresh token
 UserSchema.methods.isRefreshTokenValid = function (): boolean {
   try {
-    jwt.verify(this.refreshToken!, configENV.REFRESH_TOKEN_SECRET);
+    jwt.verify(this.refreshToken!, configENV.refreshTokenSecret);
     return true;
   } catch {
     return false;

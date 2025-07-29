@@ -58,7 +58,7 @@ class UserService {
     }
 
     public async refreshAccessToken(incomingRefreshToken: string) {
-        const decodedToken = jwt.verify(incomingRefreshToken, String(configENV.REFRESH_TOKEN_SECRET)) as JwtPayload;
+        const decodedToken = jwt.verify(incomingRefreshToken, String(configENV.refreshTokenSecret)) as JwtPayload;
         const user = await userRepository.model.findById(decodedToken.id);
 
         if (!user) throw ApiError.notFound("User does not exist!");

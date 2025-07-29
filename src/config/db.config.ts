@@ -4,7 +4,7 @@ import configENV from "./env.config";
 
 const connectDB = async () => {
     try {
-        const baseURI = configENV.DATABASE_URI;
+        const baseURI = configENV.databaseUri;
         const connectionString = `${baseURI.replace(/\/$/, "")}/${DB_NAME}`;
 
         const connectionInstance = await mongoose.connect(connectionString);

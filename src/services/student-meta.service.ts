@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import studentMetaRepository from "../repositories/student-meta.repository";
 import { IStudentMetaDataDocument } from "../models/student-meta.model";
 import ApiError from "../utils/apiError";
@@ -22,6 +22,12 @@ class StudentMetaService {
         const updatedMeta = await studentMetaRepository.update(filter, data);
         if (!updatedMeta) throw ApiError.internal("Failed to update student details.");
         return updatedMeta;
+    }
+
+    public async getStudentMeta(studentId: Types.ObjectId): Promise<IStudentMetaDataDocument> {
+        const studentMeta = await studentMetaRepository.findOne({ studentId });
+        if (!studentMeta) throw ApiError.internal("Failed to fetch student details.");
+        return studentMeta;
     }
 }
 

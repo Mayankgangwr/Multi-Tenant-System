@@ -5,14 +5,16 @@ import { connectRedis } from "./config/redis.config";
 
 const app: Application = express();
 
+app.use(cors());
+
 app.use(
-    cors({
-        origin: process.env.LOCAL_CORS_ORIGIN,
-        credentials: true,
+    express.json({
+        limit: '20kb',
+        verify: (req: any, res, buf) => {
+            req.rawBody = buf.toString();
+        },
     })
 );
-
-app.use(express.json({ limit: "20kb" }));
 
 app.use(express.urlencoded({ extended: true, limit: "20kb" }));
 
@@ -33,6 +35,8 @@ import batchRoute from "./routes/batch.route";
 import TeacherRoute from "./routes/teacher.route";
 import StudentRoute from "./routes/student.route";
 import AttendanceRoute from "./routes/attendance.routes";
+
+
 
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/tenants", tenantRoutes);

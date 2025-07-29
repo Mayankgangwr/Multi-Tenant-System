@@ -7,7 +7,7 @@ import userRepository from "../repositories/user.repository";
 
 export const verifyToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
     const accessToken = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer", "");
-    const accessTokenSecret = { secret: String(configENV.ACCESS_TOKEN_SECRET) };
+    const accessTokenSecret = { secret: String(configENV.accessTokenSecret) };
 
     const decodedToken = await decodedJWT(accessToken, accessTokenSecret);
     if (!decodedToken) throw ApiError.unauthorized("Invalid access token");

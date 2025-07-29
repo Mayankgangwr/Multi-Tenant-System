@@ -3,12 +3,13 @@ import { verifyToken } from "../middlewares/Auth.middleware";
 import { validate } from "../middlewares/Validate.middleware";
 import { UserRoles } from "../constants";
 import { authorizeRoles } from "../middlewares/Role.middleware";
-import { enrollBatch, insertStudentMeta, updateStudentMeta } from "../controllers/student-meta.controller";
+import { enrollBatch, generatePaymentIntent, insertStudentMeta, updateStudentMeta } from "../controllers/student-meta.controller";
 import { studentMetaSchema } from "../validators/student-meta.schema";
 import { register } from "../controllers/user.controller";
 import { registerSchema } from "../validators/user.schemas";
 import { asyncHandler } from "../utils/asyncHandler";
 import cashfreeService from "../services/cashfree.service";
+import crypto from "crypto";
 
 const router = Router();
 
@@ -35,24 +36,14 @@ router.patch("/profile",
     updateStudentMeta
 );
 
-router.post("/:batchId/enroll",
+router.post("/:batchId/payment",
     verifyToken,
     authorizeRoles([UserRoles.Student]),
-    enrollBatch
+    generatePaymentIntent
 );
 
-
-router.post("/pay-order",
-    asyncHandler(async (req: Request, res: Response) => {
-        const { sessionId } = req.body;
-        const paymentOrder = await cashfreeService.payOrder(sessionId);
-        res.status(201).json({
-            statusCode: 201,
-            status: true,
-            data: paymentOrder,
-            message: "Batch payment order has been successfully.",
-        });
-    })
+router.post('/payment/webhook',
+    enrollBatch
 );
 
 router.get("/order/:orderId",
@@ -67,8 +58,5 @@ router.get("/order/:orderId",
         });
     })
 );
-
-
-
 
 export default router;

@@ -1,4 +1,5 @@
 import { Schema, model, Types, Document } from 'mongoose';
+import { ICurrency } from './payment.model';
 
 export interface IEnrollmentDocument extends Document {
     studentId: Types.ObjectId;
@@ -6,14 +7,12 @@ export interface IEnrollmentDocument extends Document {
     enrolledAt: Date;
     fee: {
         amount: number;
-        currency: string;
+        currency: ICurrency;
         paid: number;
         due: number;
         status: 'unpaid' | 'partial' | 'paid';
     };
     status: 'active' | 'completed' | 'cancelled';
-    cashfreeOrderId?: string;
-    paymentSessionId?: string;
 }
 
 const EnrollmentSchema: Schema<IEnrollmentDocument> = new Schema<IEnrollmentDocument>(
@@ -23,7 +22,7 @@ const EnrollmentSchema: Schema<IEnrollmentDocument> = new Schema<IEnrollmentDocu
         enrolledAt: { type: Date, default: Date.now },
         fee: {
             amount: { type: Number, required: true },
-            currency: { type: String, default: 'INR' },
+            currency: { type: String, enum: ['INR', 'USD'], required: true, default: "INR" },
             paid: { type: Number, default: 0 },
             due: { type: Number, required: true },
             status: {
@@ -37,8 +36,6 @@ const EnrollmentSchema: Schema<IEnrollmentDocument> = new Schema<IEnrollmentDocu
             enum: ['active', 'completed', 'cancelled'],
             default: 'active',
         },
-        cashfreeOrderId: { type: String },
-        paymentSessionId: { type: String }
     },
     { timestamps: true }
 );

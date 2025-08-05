@@ -99,51 +99,74 @@ class BatchService {
         const { skip, limit, sort } = paginationOptions;
         const batches = await batchRepository.model.aggregate([
             { $match: filterQuery },
+
+            // Tenant
             {
                 $lookup: {
                     from: "tenants",
-                    foreignField: "_id",
                     localField: "tenantId",
+                    foreignField: "_id",
                     as: "organization"
                 }
             },
             { $unwind: { path: "$organization", preserveNullAndEmptyArrays: true } },
+
+            // Course
             {
                 $lookup: {
                     from: "courses",
-                    foreignField: "_id",
                     localField: "courseId",
+                    foreignField: "_id",
                     as: "course"
                 }
             },
             { $unwind: { path: "$course", preserveNullAndEmptyArrays: true } },
+
+            // Branch
             {
                 $lookup: {
                     from: "branches",
-                    foreignField: "_id",
                     localField: "branchId",
+                    foreignField: "_id",
                     as: "branch"
                 }
             },
             { $unwind: { path: "$branch", preserveNullAndEmptyArrays: true } },
+
+            // 👇 Teachers with metadata via sub-pipeline
             {
                 $lookup: {
                     from: "users",
-                    foreignField: "_id",
-                    localField: "teacherId",
+                    let: { teacherIds: "$teacherIds" },
+                    pipeline: [
+                        { $match: { $expr: { $in: ["$_id", "$$teacherIds"] } } },
+                        {
+                            $lookup: {
+                                from: "teachermetadatas",
+                                localField: "_id",
+                                foreignField: "userId",
+                                as: "metadata"
+                            }
+                        },
+                        { $unwind: { path: "$metadata", preserveNullAndEmptyArrays: true } },
+                        {
+                            $project: {
+                                _id: 1,
+                                name: 1,
+                                email: 1,
+                                qualification: "$metadata.qualification",
+                                specialization: "$metadata.specialization",
+                                experience: "$metadata.experience",
+                                certifications: "$metadata.certifications",
+                                joinedAt: "$metadata.joinedAt"
+                            }
+                        }
+                    ],
                     as: "teacher"
                 }
             },
-            { $unwind: { path: "$teacher", preserveNullAndEmptyArrays: true } },
-            {
-                $lookup: {
-                    from: "teachermetadatas",
-                    foreignField: "userId",
-                    localField: "teacherId",
-                    as: "metadata"
-                }
-            },
-            { $unwind: { path: "$metadata", preserveNullAndEmptyArrays: true } },
+
+            // Final project
             {
                 $project: {
                     _id: 1,
@@ -166,32 +189,23 @@ class BatchService {
                         isDelete: "$course.isDelete"
                     },
                     branch: {
-                        _id: "$course._id",
-                        name: "$course.name",
-                        location: "$course.location",
-                        contactEmail: "$course.contactEmail",
-                        phoneNumber: "$course.phoneNumber",
-                        timeZone: "$course.timeZone",
-                        isMainBranch: "$course.isMainBranch",
-                        holidays: "$course.holidays",
-                        weeklyOff: "$course.weeklyOff",
-                        isDelete: "$course.isDelete"
+                        _id: "$branch._id",
+                        name: "$branch.name",
+                        location: "$branch.location",
+                        contactEmail: "$branch.contactEmail",
+                        phoneNumber: "$branch.phoneNumber",
+                        timeZone: "$branch.timeZone",
+                        isMainBranch: "$branch.isMainBranch",
+                        holidays: "$branch.holidays",
+                        weeklyOff: "$branch.weeklyOff",
+                        isDelete: "$branch.isDelete"
                     },
-                    teacher: {
-                        _id: "$teacher._id",
-                        name: "$teacher.name",
-                        email: "$teacher.email",
-                        qualification: "$metadata.qualification",
-                        specialization: "$metadata.specialization",
-                        experience: "$metadata.experience",
-                        certifications: "$metadata.certifications",
-                        joinedAt: "$metadata.joinedAt",
-                    },
+                    teacher: 1,
                     schedule: 1,
                     maxCapacity: 1,
                     isFull: 1,
                     status: 1,
-                    isDelete: 1,
+                    isDelete: 1
                 }
             },
 
@@ -199,6 +213,8 @@ class BatchService {
             { $skip: skip },
             { $limit: limit }
         ]);
+
+
 
         if (!batches || batches.length === 0) {
             throw ApiError.notFound("No batches found.");

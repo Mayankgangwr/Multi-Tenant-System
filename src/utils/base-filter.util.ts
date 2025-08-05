@@ -153,29 +153,32 @@ export const buildBatchFilter = (query: Record<string, any>): FilterQuery<IBatch
     }
 
     if (query.tenantId) {
-        filter.tenantId = new mongoose.Types.ObjectId(String(query.tenantId));;
+        filter.tenantId = new mongoose.Types.ObjectId(String(query.tenantId));
     }
 
     if (query.branchId) {
-        filter.branchId = new mongoose.Types.ObjectId(String(query.branchId));;
+        filter.branchId = new mongoose.Types.ObjectId(String(query.branchId));
     }
 
     if (query.teacherId) {
-        filter.teacherId = new mongoose.Types.ObjectId(String(query.teacherId));;
+        filter.teacherIds = new mongoose.Types.ObjectId(String(query.teacherId)); // Note: teacherIds is an array
     }
 
     if (query.courseId) {
-        filter.courseId = new mongoose.Types.ObjectId(String(query.courseId));;
+        filter.courseId = new mongoose.Types.ObjectId(String(query.courseId));
     }
 
     if (query.schedule) {
         filter.schedule = query.schedule;
     }
 
-
+    if (query.studentId) {
+        filter.studentIds = new mongoose.Types.ObjectId(String(query.studentId));
+    }
 
     return filter;
-}
+};
+
 
 export const buildAttendanceFilter = (query: Record<string, any>): FilterQuery<IAttendanceDocument> => {
     const filter: FilterQuery<IAttendanceDocument> = {};

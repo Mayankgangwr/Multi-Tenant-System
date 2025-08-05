@@ -5,8 +5,12 @@ import { connectRedis } from "./config/redis.config";
 
 const app: Application = express();
 
-app.use(cors());
-
+app.use(
+    cors({
+        origin: "http://localhost:5173", // ✅ Your React frontend's origin
+        credentials: true,              // ✅ Allow cookies and auth headers
+    })
+);
 app.use(
     express.json({
         limit: '20kb',

@@ -10,6 +10,10 @@ import { registerSchema } from "../validators/user.schemas";
 import { asyncHandler } from "../utils/asyncHandler";
 import cashfreeService from "../services/cashfree.service";
 import crypto from "crypto";
+import paymentRepository from "../repositories/payment.repository";
+import paymentService from "../services/payment.service";
+import ApiError from "../utils/apiError";
+import { getAllBatches } from "../controllers/batch.controller";
 
 const router = Router();
 
@@ -37,8 +41,8 @@ router.patch("/profile",
 );
 
 router.post("/:batchId/payment",
-    verifyToken,
-    authorizeRoles([UserRoles.Student]),
+    // verifyToken,
+    // authorizeRoles([UserRoles.Student]),
     generatePaymentIntent
 );
 
@@ -46,17 +50,40 @@ router.post('/payment/webhook',
     enrollBatch
 );
 
-router.get("/order/:orderId",
+router.get('/payment/status',
     asyncHandler(async (req: Request, res: Response) => {
-        const { orderId } = req.params;
-        const order = await cashfreeService.getOrder(orderId);
-        res.status(201).json({
-            statusCode: 201,
+        const orderId = req.query.orderId as string;
+        if (!orderId) throw ApiError.badRequest(`Order ID is required.`);
+
+        const order = await paymentService.getByOrderId(orderId);
+
+        res.status(200).json({
+            statusCode: 200,
             status: true,
             data: order,
             message: "Order fetched successfully.",
         });
     })
 );
+
+
+router.get("/order/:orderId",
+    asyncHandler(async (req: Request, res: Response) => {
+        const { orderId } = req.params;
+        const order = await paymentService.getByOrderId(orderId);
+        res.status(200).json({
+            statusCode: 200,
+            status: true,
+            data: order,
+            message: "Order fetched successfully.",
+        });
+    })
+);
+
+router.get("/my-learning",
+    verifyToken,
+    authorizeRoles([UserRoles.Student]),
+    getAllBatches
+)
 
 export default router;

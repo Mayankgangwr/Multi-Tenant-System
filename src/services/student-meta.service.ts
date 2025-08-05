@@ -25,7 +25,7 @@ class StudentMetaService {
     }
 
     public async getStudentMeta(studentId: Types.ObjectId): Promise<IStudentMetaDataDocument> {
-        const studentMeta = await studentMetaRepository.findOne({ studentId });
+        const studentMeta = await studentMetaRepository.findOne({ userId: studentId });
         if (!studentMeta) throw ApiError.internal("Failed to fetch student details.");
         return studentMeta;
     }

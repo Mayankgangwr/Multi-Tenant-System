@@ -8,6 +8,7 @@ import { IBranchDocument } from "../models/branch.model";
 import { IBatchDocument } from "../models/batch.model";
 import { IAttendanceDocument } from "../models/attendance.model";
 import moment from "moment";
+import { IClassSessionDocument } from "../models/class-session.model";
 
 
 /**
@@ -179,6 +180,43 @@ export const buildBatchFilter = (query: Record<string, any>): FilterQuery<IBatch
     return filter;
 };
 
+
+export const buildClassSessionFilter = (query: Record<string, any>): FilterQuery<IClassSessionDocument> => {
+    const filter: FilterQuery<IClassSessionDocument> = {};
+
+    filter.isDeleted = false;
+    if (query.isDeleted !== undefined) {
+        filter.isDeleted = query.isDeleted === "true";
+    }
+
+    if (query.tenantId) {
+        filter.tenantId = new mongoose.Types.ObjectId(String(query.tenantId));
+    }
+
+    if (query.batchId) {
+        filter.batchId = new mongoose.Types.ObjectId(String(query.batchId));
+    }
+
+    if (query.teacherId) {
+        filter.teacherId = new mongoose.Types.ObjectId(String(query.teacherId));
+    }
+
+    if (query.startDate || query.endDate) {
+        filter.date = {};
+
+        if (query.startDate) filter.date.$gte = moment(query.startDate, 'DD-MM-YYYY').startOf('day').toDate();
+
+        if (query.endDate) filter.date.$lte = moment(query.endDate, 'DD-MM-YYYY').startOf('day').toDate();
+    } else if (query.date) {
+        filter.date = {
+            $gte: moment(query.date, 'DD-MM-YYYY').startOf('day').toDate(),
+            $lte: moment(query.date, 'DD-MM-YYYY').endOf('day').toDate()
+        };
+    }
+
+
+    return filter;
+};
 
 export const buildAttendanceFilter = (query: Record<string, any>): FilterQuery<IAttendanceDocument> => {
     const filter: FilterQuery<IAttendanceDocument> = {};

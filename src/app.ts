@@ -39,6 +39,7 @@ import batchRoute from "./routes/batch.route";
 import TeacherRoute from "./routes/teacher.route";
 import StudentRoute from "./routes/student.route";
 import AttendanceRoute from "./routes/attendance.routes";
+import ClassSessionRoute from "./routes/class-session.routes";
 
 
 
@@ -52,7 +53,7 @@ app.use("/api/v1/batches", batchRoute);
 app.use("/api/v1/teachers", TeacherRoute);
 app.use("/api/v1/students", StudentRoute);
 app.use("/api/v1/attendance", AttendanceRoute);
-
+app.use("/api/v1/classes", ClassSessionRoute);
 
 app.get('/', (_req, res) => {
     res.send('Hello from TypeScript + MongoDB API');

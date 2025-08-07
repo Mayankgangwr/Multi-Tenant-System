@@ -1,6 +1,11 @@
 import z from "zod";
 import { objectId } from "./IdParam.schema";
 
+const subjectSchema = z.object({
+    title: z.string().min(1, "Subject title is required"),
+    description: z.string().optional(),
+});
+
 export const createBatchSchema = z.object({
     tenantId: objectId("Tenant ID is required"),
     courseId: objectId("Course ID is required"),
@@ -12,6 +17,7 @@ export const createBatchSchema = z.object({
             message: "Invalid schedule date",
         }),
     maxCapacity: z.number().int().positive().optional(),
+    subjects: z.array(subjectSchema).optional().default([]),
     isFull: z.boolean().optional(),
     status: z.boolean().optional(),
 });

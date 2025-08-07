@@ -1,3 +1,7 @@
+export interface ISubject {
+  title: string;
+  description?: string;
+}
 export interface CreateCourseDto {
   tenantId: string;
   name: string;
@@ -7,6 +11,7 @@ export interface CreateCourseDto {
   duration?: string;
   imageUrl?: string;
   fee: number;
+  subjects?: ISubject[]
 }
 
 export interface UpdateCourseDto extends Partial<CreateCourseDto> {}

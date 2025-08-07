@@ -1,5 +1,6 @@
 // batches.schema.ts
 import { Schema, model, Document, Types } from 'mongoose';
+import { ISubject } from '../types/course.type';
 
 export interface IBatchDocument extends Document {
   tenantId: Types.ObjectId;
@@ -11,6 +12,7 @@ export interface IBatchDocument extends Document {
   maxCapacity?: number;
   remainingSheets?: number
   isFull?: boolean;
+  subjects: ISubject[];
   status?: boolean;
   isDeleted: boolean;
 }
@@ -25,6 +27,15 @@ const BatchSchema: Schema<IBatchDocument> = new Schema<IBatchDocument>({
   maxCapacity: { type: Number, default: 0 },
   remainingSheets: { type: Number, default: 0 },
   isFull: { type: Boolean, default: false },
+  subjects: {
+    type: [
+      {
+        title: { type: String, required: true },
+        description: { type: String },
+      }
+    ],
+    default: [],
+  },
   status: { type: Boolean, default: true },
   isDeleted: { type: Boolean, default: false },
 }, { timestamps: true });

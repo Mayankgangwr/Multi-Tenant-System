@@ -40,6 +40,7 @@ import TeacherRoute from "./routes/teacher.route";
 import StudentRoute from "./routes/student.route";
 import AttendanceRoute from "./routes/attendance.routes";
 import ClassSessionRoute from "./routes/class-session.routes";
+import AssignmentRoute from "./routes/assignment.routes";
 
 
 
@@ -54,6 +55,7 @@ app.use("/api/v1/teachers", TeacherRoute);
 app.use("/api/v1/students", StudentRoute);
 app.use("/api/v1/attendance", AttendanceRoute);
 app.use("/api/v1/classes", ClassSessionRoute);
+app.use("/api/v1/assignments", AssignmentRoute)
 
 app.get('/', (_req, res) => {
     res.send('Hello from TypeScript + MongoDB API');

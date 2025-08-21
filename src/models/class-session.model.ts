@@ -4,8 +4,9 @@ import { Document, model, Schema, Types } from "mongoose";
 export interface IClassSessionDocument extends Document {
     tenantId: Types.ObjectId;
     batchId: Types.ObjectId;
-    title: string;
+    subjectId: Types.ObjectId;
     teacherId: Types.ObjectId;
+    title: string;
     startTime: Date;
     endTime: Date;
     isLive: boolean;
@@ -15,8 +16,9 @@ export interface IClassSessionDocument extends Document {
 const ClassSessionSchema: Schema<IClassSessionDocument> = new Schema<IClassSessionDocument>({
     tenantId: { type: Schema.Types.ObjectId, ref: 'Tenant', required: true },
     batchId: { type: Schema.Types.ObjectId, ref: 'Batch', required: true },
-    title: { type: String, required: true },
+    subjectId: { type: Schema.Types.ObjectId, required: true },
     teacherId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    title: { type: String, required: true },
     startTime: { type: Date, required: true },
     endTime: { type: Date, required: true },
     isLive: { type: Boolean, default: false },

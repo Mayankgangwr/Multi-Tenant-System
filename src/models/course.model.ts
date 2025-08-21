@@ -1,10 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose';
 
-interface ISubject {
-  title: string;
-  description?: string;
-}
-
 export interface ICourseDocument extends Document {
   tenantId: Types.ObjectId;
   name: string;
@@ -14,7 +9,6 @@ export interface ICourseDocument extends Document {
   duration?: string;
   imageUrl?: string;
   fee: number;
-  subjects?: ISubject[];
   isDelete: boolean;
   status: boolean;
 }
@@ -28,16 +22,6 @@ const CourseSchema: Schema<ICourseDocument> = new Schema<ICourseDocument>({
   duration: { type: String },
   imageUrl: { type: String },
   fee: { type: Number, required: true },
-  subjects: {
-    type: [
-      {
-        _id: 0,
-        title: { type: String, required: true },
-        description: { type: String },
-      }
-    ],
-    default: [],
-  },
   status: { type: Boolean, default: true },
   isDelete: { type: Boolean, default: false },
 }, { timestamps: true });

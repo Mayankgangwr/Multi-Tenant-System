@@ -18,7 +18,7 @@ export default class BaseRepository<T extends Document> {
   }
 
   async findOne(filter: FilterQuery<T>): Promise<T | null> {
-    return await this.model.findOne(filter);
+    return await this.model.findOne(filter).exec();
   }
 
   async findAll(

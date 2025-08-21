@@ -12,8 +12,8 @@ export interface IBatchDocument extends Document {
   maxCapacity?: number;
   remainingSheets?: number
   isFull?: boolean;
-  subjects: ISubject[];
-  status?: boolean;
+  subjects?: ISubject[];
+  status: boolean;
   isDeleted: boolean;
 }
 

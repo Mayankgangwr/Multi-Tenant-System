@@ -6,7 +6,9 @@ import { AuthRequest } from "../types/AuthResponse";
 import userRepository from "../repositories/user.repository";
 
 export const verifyToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const accessToken = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer", "");
+    let accessToken = req.cookies?.accessToken || req.header("Authorization")?.replace(/^Bearer\s*/, "");
+    if (accessToken) accessToken = accessToken.trim();
+
     const accessTokenSecret = { secret: String(configENV.accessTokenSecret) };
 
     const decodedToken = await decodedJWT(accessToken, accessTokenSecret);

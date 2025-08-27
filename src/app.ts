@@ -11,6 +11,11 @@ app.use(
         credentials: true,              // ✅ Allow cookies and auth headers
     })
 );
+
+// app.use(cors({
+//     origin: "*",  // or ["http://192.168.1.33:5173", "http://localhost:5173"]
+//     credentials: true,
+// }));
 app.use(
     express.json({
         limit: '20kb',
@@ -41,7 +46,7 @@ import StudentRoute from "./routes/student.route";
 import AttendanceRoute from "./routes/attendance.routes";
 import ClassSessionRoute from "./routes/class-session.routes";
 import AssignmentRoute from "./routes/assignment.routes";
-
+import SubmitAssignmentRoute from "./routes/submitted-assignment.routers";
 
 
 app.use("/api/v1/users", userRoutes);
@@ -55,7 +60,8 @@ app.use("/api/v1/teachers", TeacherRoute);
 app.use("/api/v1/students", StudentRoute);
 app.use("/api/v1/attendance", AttendanceRoute);
 app.use("/api/v1/classes", ClassSessionRoute);
-app.use("/api/v1/assignments", AssignmentRoute)
+app.use("/api/v1/assignments", AssignmentRoute);
+app.use("/api/v1/submitted-assignment", SubmitAssignmentRoute)
 
 app.get('/', (_req, res) => {
     res.send('Hello from TypeScript + MongoDB API');

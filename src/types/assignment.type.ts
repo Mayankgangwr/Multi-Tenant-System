@@ -15,3 +15,13 @@ export interface IAssignmentDto {
     allowLateSubmission?: boolean;
     latePenaltyPercentage?: number;
 }
+
+export interface ISubmittedAssignmentDto {
+    assignmentId: Types.ObjectId;
+    studentId: Types.ObjectId;
+    description?: string;
+    files: string[];
+    urls: string[];
+    progress: number;
+    completionStatus: 'pending' | 'full' | 'partial';
+}

@@ -51,13 +51,11 @@ class AssignmentService {
         return updatedAssignment;
     }
 
-    public async getAssignmentById(assignmentId: string): Promise<any> {
-        // Step 2: Match filter
+    public async getAssignmentById(assignmentId: string, studentId?: string): Promise<any> {
         const filterQuery: Record<string, any> = {
             _id: new mongoose.Types.ObjectId(assignmentId),
         };
 
-        // Step 3: Build batch pipeline
         const batchPipeline: PipelineStage[] = [
             {
                 $lookup: {
@@ -79,19 +77,12 @@ class AssignmentService {
                                             $expr: { $eq: ["$_id", "$$courseId"] },
                                         },
                                     },
-                                    {
-                                        $project: { _id: 1, name: 1 },
-                                    },
+                                    { $project: { _id: 1, name: 1 } },
                                 ],
                                 as: "course",
                             },
                         },
-                        {
-                            $unwind: {
-                                path: "$course",
-                                preserveNullAndEmptyArrays: true,
-                            },
-                        },
+                        { $unwind: { path: "$course", preserveNullAndEmptyArrays: true } },
                         {
                             $addFields: {
                                 subject: {
@@ -122,10 +113,10 @@ class AssignmentService {
                                         {
                                             id: "$subject._id",
                                             description: "$subject.description",
-                                            title: "$subject.title"
+                                            title: "$subject.title",
                                         },
-                                        "$$REMOVE"
-                                    ]
+                                        "$$REMOVE",
+                                    ],
                                 },
                             },
                         },
@@ -133,16 +124,9 @@ class AssignmentService {
                     as: "batch",
                 },
             },
-            {
-                $unwind: {
-                    path: "$batch",
-                    preserveNullAndEmptyArrays: true,
-                },
-            },
+            { $unwind: { path: "$batch", preserveNullAndEmptyArrays: true } },
         ];
 
-
-        // Step 4: Teacher lookup
         const teacherPipeline: PipelineStage[] = [
             {
                 $lookup: {
@@ -152,18 +136,59 @@ class AssignmentService {
                     as: "teacher",
                 },
             },
-            {
-                $unwind: {
-                    path: "$teacher",
-                    preserveNullAndEmptyArrays: true,
-                },
-            }
+            { $unwind: { path: "$teacher", preserveNullAndEmptyArrays: true } },
         ];
+
+        const submittedAssignmentPipeline: PipelineStage[] =
+            studentId
+                ? [
+                    {
+                        $lookup: {
+                            from: "submittedassignments",
+                            let: { assignmentId: "$_id" },
+                            pipeline: [
+                                {
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                { $eq: ["$assignmentId", "$$assignmentId"] },
+                                                { $eq: ["$studentId", new mongoose.Types.ObjectId(studentId)] },
+                                                { $eq: ["$status", true] },
+                                                { $ne: ["$isDeleted", true] },
+                                            ],
+                                        },
+                                    },
+                                },
+                                {
+                                    $project: {
+                                        _id: 1,
+                                        assignmentId: 1,
+                                        studentId: 1,
+                                        description: 1,
+                                        files: 1,
+                                        urls: 1,
+                                        progress: 1,
+                                        completionStatus: 1,
+                                    }
+                                }
+                            ],
+                            as: "submittedAssignment",
+                        },
+                    },
+                    {
+                        $unwind: {
+                            path: "$submittedAssignment",
+                            preserveNullAndEmptyArrays: true,
+                        },
+                    },
+                ]
+                : [];
 
         const pipeline: PipelineStage[] = [
             { $match: filterQuery },
             ...batchPipeline,
             ...teacherPipeline,
+            ...submittedAssignmentPipeline,
             {
                 $project: {
                     _id: 1,
@@ -176,18 +201,19 @@ class AssignmentService {
                     batch: 1,
                     teacher: {
                         id: "$teacher._id",
-                        name: "$teacher.name"
+                        name: "$teacher.name",
                     },
+                    submittedAssignment: 1, // ✅ include in result
                     createdAt: 1,
-                    updatedAt: 1
-                }
-            }
+                    updatedAt: 1,
+                },
+            },
         ];
 
         const result = await assignmentRepository.model.aggregate(pipeline);
         return result[0] || null;
-
     }
+
 
     public async delete(id: string, tenantId: Types.ObjectId): Promise<boolean> {
         const isDeleted = await assignmentRepository.delete(id, tenantId);

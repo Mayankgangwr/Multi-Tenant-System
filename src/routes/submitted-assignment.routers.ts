@@ -6,6 +6,7 @@ import { verifyToken } from "../middlewares/Auth.middleware";
 const router = Router();
 
 router.post("/",
+    verifyToken,
     uploadFile.array('attachments', 50),
     insertSubmittedAssignment
 );

@@ -21,6 +21,8 @@ export interface ISubmittedAssignmentDto {
     studentId: Types.ObjectId;
     description?: string;
     files: string[];
+    existingFiles?: string[];
+    removedExistingFiles?: string[];
     urls: string[];
     progress: number;
     completionStatus: 'pending' | 'full' | 'partial';

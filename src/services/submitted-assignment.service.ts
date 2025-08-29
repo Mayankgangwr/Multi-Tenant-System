@@ -3,6 +3,7 @@ import { ISubmittedAssignmentDocument } from "../models/submitted-assignment.mod
 import submittedAssignmentRepository from "../repositories/submitted-assignment.repository";
 import { ISubmittedAssignmentDto } from "../types/assignment.type";
 import ApiError from "../utils/apiError";
+import filesServices from "./files.service";
 
 class SubmittedAssignmentService {
     public async upsert(data: ISubmittedAssignmentDto): Promise<ISubmittedAssignmentDocument> {
@@ -14,11 +15,13 @@ class SubmittedAssignmentService {
             status: true,
         });
 
+        if (data?.removedExistingFiles) filesServices.cloudinaryDelete(data.removedExistingFiles);
+
         if (submittedAssignment) {
             // ✅ Update fields safely
             submittedAssignment.description = data.description;
             submittedAssignment.progress = data.progress;
-            submittedAssignment.files = data.files || [];
+            submittedAssignment.files = [...(data?.existingFiles || []), ...(data.files || [])];
             submittedAssignment.urls = data.urls || [];
             submittedAssignment.completionStatus = data.completionStatus;
 

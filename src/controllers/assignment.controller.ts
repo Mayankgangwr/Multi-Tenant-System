@@ -14,6 +14,11 @@ export const insertAssignment = asyncHandler(async (req: AuthRequest, res: Respo
     res.status(201).json({ statusCode: 201, status: true, data: classSession, message: "Assignment created successfully." });
 });
 
+export const getAssignments = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const assignments = await assignmentService.getAssignments();
+    res.status(201).json({ statusCode: 201, status: true, data: assignments, message: "Assignments fetched successfully." });
+});
+
 export const getAssignmentById = asyncHandler(async (req: AuthRequest, res: Response) => {
     const assignmentId = req.params.assignmentId as string;
      const studentId = req.user?._id?.toString();

@@ -1,5 +1,6 @@
 import { v2 as Cloudinary, UploadApiResponse } from "cloudinary";
 import fs, { promises as fsp } from "fs";
+import getCloudinaryPublicId from "../utils/getCloudinaryPublicId";
 
 Cloudinary.config({
     cloud_name: "chaiaurcodelearn",
@@ -73,12 +74,8 @@ class FilesServices {
         await Promise.all(
             fileUrls.map(async (url) => {
                 try {
-                    // Extract public_id from URL
-                    const parts = url.split("/");
-                    const fileWithExt = parts.pop() || "";
-                    const publicId =
-                        parts.slice(7).join("/") + "/" + fileWithExt.split(".")[0]; // remove extension
-
+                    const publicId = getCloudinaryPublicId(url);
+                    if (!publicId) return;
                     const res = await Cloudinary.uploader.destroy(publicId);
                     if (res.result === "ok") {
                         console.log(`🗑️ Deleted from Cloudinary: ${publicId}`);

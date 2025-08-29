@@ -51,6 +51,117 @@ class AssignmentService {
         return updatedAssignment;
     }
 
+    public async getAssignments(): Promise<any> {
+        const batchPipeline: PipelineStage[] = [
+            {
+                $lookup: {
+                    from: "batches",
+                    let: { batchId: "$batchId", subjectId: "$subjectId" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $eq: ["$_id", "$$batchId"] },
+                            },
+                        },
+                        {
+                            $lookup: {
+                                from: "courses",
+                                let: { courseId: "$courseId" },
+                                pipeline: [
+                                    {
+                                        $match: {
+                                            $expr: { $eq: ["$_id", "$$courseId"] },
+                                        },
+                                    },
+                                    { $project: { _id: 1, name: 1 } },
+                                ],
+                                as: "course",
+                            },
+                        },
+                        { $unwind: { path: "$course", preserveNullAndEmptyArrays: true } },
+                        {
+                            $addFields: {
+                                subject: {
+                                    $arrayElemAt: [
+                                        {
+                                            $filter: {
+                                                input: "$subjects",
+                                                as: "subject",
+                                                cond: { $eq: ["$$subject._id", "$$subjectId"] },
+                                            },
+                                        },
+                                        0,
+                                    ],
+                                },
+                            },
+                        },
+                        {
+                            $project: {
+                                _id: 1,
+                                schedule: 1,
+                                course: {
+                                    id: "$course._id",
+                                    name: "$course.name",
+                                },
+                                subject: {
+                                    $cond: [
+                                        { $ne: ["$subject", null] },
+                                        {
+                                            id: "$subject._id",
+                                            description: "$subject.description",
+                                            title: "$subject.title",
+                                        },
+                                        "$$REMOVE",
+                                    ],
+                                },
+                            },
+                        },
+                    ],
+                    as: "batch",
+                },
+            },
+            { $unwind: { path: "$batch", preserveNullAndEmptyArrays: true } },
+        ];
+
+        const teacherPipeline: PipelineStage[] = [
+            {
+                $lookup: {
+                    from: "users",
+                    foreignField: "_id",
+                    localField: "createdBy",
+                    as: "teacher",
+                },
+            },
+            { $unwind: { path: "$teacher", preserveNullAndEmptyArrays: true } },
+        ];
+
+        const pipeline: PipelineStage[] = [
+            ...batchPipeline,
+            ...teacherPipeline,
+            {
+                $project: {
+                    _id: 1,
+                    title: 1,
+                    description: 1,
+                    instructions: 1,
+                    attachments: 1,
+                    githubTemplateUrl: 1,
+                    dueDate: 1,
+                    batch: 1,
+                    teacher: {
+                        id: "$teacher._id",
+                        name: "$teacher.name",
+                    },
+                    createdAt: 1,
+                    updatedAt: 1,
+                },
+            },
+        ];
+
+        const result = await assignmentRepository.model.aggregate(pipeline);
+        return result;
+    }
+
     public async getAssignmentById(assignmentId: string, studentId?: string): Promise<any> {
         const filterQuery: Record<string, any> = {
             _id: new mongoose.Types.ObjectId(assignmentId),

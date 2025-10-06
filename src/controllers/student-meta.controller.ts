@@ -58,7 +58,6 @@ export const enrollBatch = asyncHandler(async (req: any, res: Response) => {
     let timestamp = req.headers["x-webhook-timestamp"];
     let signature = req.headers["x-webhook-signature"];
     if (!signature || !timestamp) throw new Error();
-    console.log("Webhook")
     if (Array.isArray(signature)) signature = signature[0];
     if (Array.isArray(timestamp)) timestamp = timestamp[0];
 

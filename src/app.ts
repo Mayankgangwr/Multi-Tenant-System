@@ -11,7 +11,7 @@ app.use(
         credentials: true,              // ✅ Allow cookies and auth headers
     })
 );
-
+3
 // app.use(cors({
 //     origin: "*",  // or ["http://192.168.1.33:5173", "http://localhost:5173"]
 //     credentials: true,

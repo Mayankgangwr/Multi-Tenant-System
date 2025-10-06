@@ -10,3 +10,7 @@ export interface IClassSessionDto {
     isLive: boolean;
     streamLink: string;
 }
+
+export interface IUpcomingClassSession{
+    
+}

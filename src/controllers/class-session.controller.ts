@@ -14,7 +14,7 @@ export const insertClassSession = asyncHandler(async (req: AuthRequest, res: Res
 });
 
 export const updateClassSession = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const classId = req.params.batchId as string;
+    const classId = req.params.classId as string;
     const batchId = req.body.batchId ? new mongoose.Types.ObjectId(req.body.batchId as string) : null;
     if (!classId || !batchId) throw ApiError.badRequest("Batch and class id both are required");
     const classSession = await classSessionService.update(classId, { ...req.body, batchId });
@@ -28,6 +28,11 @@ export const getClassSessionById = asyncHandler(async (req: AuthRequest, res: Re
     res.status(201).json({ statusCode: 201, status: true, data: classSession, message: "Class session fetched successfully." });
 });
 
+export const getClassSessions = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const classSession = await classSessionService.getAll(req.query);
+    res.status(201).json({ statusCode: 201, status: true, data: classSession, message: "Class session fetched successfully." });
+});
+
 export const getClassSessionByStudentId = asyncHandler(async (req: AuthRequest, res: Response) => {
     const studentId = req.query.studentId as string;
     if (!studentId) throw ApiError.badRequest("Class id is required");
@@ -35,3 +40,17 @@ export const getClassSessionByStudentId = asyncHandler(async (req: AuthRequest, 
     const classSession = await classSessionService.getAll({ ...req.query, studentId });
     res.status(201).json({ statusCode: 201, status: true, data: classSession, message: "Class session fetched successfully." });
 });
+
+export const getUpcommingClassSession = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const classSession = await classSessionService.getAll({ ...req.query });
+    res.status(201).json({ statusCode: 201, status: true, data: classSession, message: "Upcoming class session fetched successfully." });
+});
+
+export const deleteClassSession = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const classId = req.params.classId as string;
+    const tenantId = req.user?.tenantId ? new mongoose.Types.ObjectId(req.user?.tenantId) : null;
+    if (!classId || !tenantId) throw ApiError.badRequest("Class and Tenant both ids are required.");
+    const classSessionId = await classSessionService.delete(classId, tenantId);
+    res.status(201).json({ statusCode: 200, status: true, data: classSessionId, message: "class has been deleted successfully." });
+});
+

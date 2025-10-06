@@ -3,9 +3,18 @@ import { asyncHandler } from "../utils/asyncHandler";
 import courseService from "../services/course.service";
 import ApiError from "../utils/apiError";
 import { AuthRequest } from "../types/AuthResponse";
+import filesServices from "../services/files.service";
 
 export const insertCourse = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const course = await courseService.create(req.body);
+    const payload = { ...req.body };
+    const bannerImage = req.file ? req.file.path : '';
+    if (!bannerImage) throw ApiError.badRequest("Banner file is required");
+
+    const banner = await filesServices.upload(bannerImage);
+    if (!banner) throw new ApiError(400, "Failed to upload banner to Cloudinary");
+
+    payload.banner = banner[0].url;
+    const course = await courseService.create(payload);
     res.status(201).json({ statusCode: 201, status: true, data: course, message: "Course created successfully." });
 });
 
@@ -13,7 +22,18 @@ export const updateCourse = asyncHandler(async (req: Request, res: Response) => 
     const courseId = req.params.id;
     if (!courseId) throw ApiError.badRequest("Course ID is required.");
 
-    const course = await courseService.update(courseId, req.body);
+    const payload = { ...req.body };
+    if (req.file) {
+        const bannerImage = req.file.path;
+
+        const banner = await filesServices.upload(bannerImage);
+        if (!banner) {
+            throw new ApiError(400, "Failed to upload banner to Cloudinary");
+        }
+
+        payload.banner = banner[0].url;
+    }
+    const course = await courseService.update(courseId, payload);
     res.status(200).json({ statusCode: 200, status: true, data: course, message: "Course updated successfully." });
 });
 

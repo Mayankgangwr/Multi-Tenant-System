@@ -42,7 +42,7 @@ export default class BaseRepository<T extends Document> {
 
   async delete(id: string, tenantId: Types.ObjectId): Promise<boolean> {
     const docId = new mongoose.Types.ObjectId(id);
-    const result = await this.model.updateOne({ _id: docId, tenantId: tenantId }, { isDelete: true }, { new: true })
+    const result = await this.model.updateOne({ _id: docId, tenantId: tenantId }, { isDeleted: true, isDelete: true }, { new: true })
     return !!result;
   }
 

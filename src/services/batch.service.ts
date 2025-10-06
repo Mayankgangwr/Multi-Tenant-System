@@ -4,6 +4,7 @@ import batchRepository from "../repositories/batch.repository";
 import ApiError from "../utils/apiError";
 import { buildBatchFilter } from "../utils/base-filter.util";
 import { generatePaginationDto, generatePaginationOptions } from "../utils/pagination.util";
+import { IResponseList } from "../types/response.type";
 
 class BatchService {
     public async create(data: Partial<IBatchDocument>): Promise<IBatchDocument> {
@@ -93,7 +94,7 @@ class BatchService {
         return batch;
     }
 
-    public async getAll(query: Record<string, any>): Promise<IBatchDocument[]> {
+    public async getAll(query: Record<string, any>): Promise<IResponseList<IBatchDocument[]>> {
         const filterQuery = buildBatchFilter(query);
         const paginationOptions = generatePaginationOptions(query);
         const { skip, limit, sort } = paginationOptions;
@@ -200,6 +201,7 @@ class BatchService {
                         weeklyOff: "$branch.weeklyOff",
                         isDelete: "$branch.isDelete"
                     },
+                    subjects: 1,
                     teacher: 1,
                     schedule: 1,
                     maxCapacity: 1,
@@ -208,19 +210,34 @@ class BatchService {
                     isDelete: 1
                 }
             },
+            {
+                $facet: {
+                    metadata: [
+                        { $count: "total" } // count all records after filter
+                    ],
+                    records: [
+                        { $sort: sort },
+                        { $skip: skip },
+                        { $limit: limit }
+                    ]
+                }
+            },
+            {
+                $project: {
+                    total: { $ifNull: [{ $arrayElemAt: ["$metadata.total", 0] }, 0] },
+                    records: 1
+                }
+            }
+        ]).exec();
 
-            { $sort: sort },
-            { $skip: skip },
-            { $limit: limit }
-        ]);
-
-
-
-        if (!batches || batches.length === 0) {
+        if (!batches || batches.length === 0 || batches[0].total === 0) {
             throw ApiError.notFound("No batches found.");
         }
 
-        return batches;
+        return {
+            total: batches[0].total,
+            records: batches[0].records
+        };
     }
 
     public async delete(id: string, tenantId: Types.ObjectId): Promise<boolean> {

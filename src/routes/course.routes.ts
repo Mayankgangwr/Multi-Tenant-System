@@ -15,14 +15,16 @@ import { createCourseSchema, updateCourseSchema } from "../validators/course.sch
 import { UserRoles } from "../constants";
 import { authorizeRoles } from "../middlewares/Role.middleware";
 import { tenantAccess } from "../middlewares/tenant.middleware";
+import { uploadFile } from "../middlewares/multer.middleware";
 
 const router = Router();
 
 router.post("/",
     verifyToken,
-    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
-    tenantAccess,
-    validate({ body: createCourseSchema }),
+    // authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
+    // tenantAccess,
+    uploadFile.single('bannerImage'),
+    // validate({ body: createCourseSchema }),
     insertCourse
 );
 
@@ -40,9 +42,7 @@ router.get("/:id",
 
 router.patch("/:id",
     verifyToken,
-    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin]),
-    tenantAccess,
-    validate({ body: updateCourseSchema, params: idParamSchema() }),
+    uploadFile.single('bannerImage'),
     updateCourse
 );
 

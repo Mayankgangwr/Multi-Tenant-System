@@ -7,7 +7,7 @@ export interface ICourseDocument extends Document {
   category?: string;
   level?: string;
   duration?: string;
-  imageUrl?: string;
+  banner?: string;
   fee: number;
   isDelete: boolean;
   status: boolean;
@@ -20,7 +20,7 @@ const CourseSchema: Schema<ICourseDocument> = new Schema<ICourseDocument>({
   category: { type: String },
   level: { type: String },
   duration: { type: String },
-  imageUrl: { type: String },
+  banner: { type: String },
   fee: { type: Number, required: true },
   status: { type: Boolean, default: true },
   isDelete: { type: Boolean, default: false },

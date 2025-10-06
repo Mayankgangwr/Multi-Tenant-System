@@ -30,7 +30,7 @@ router.post(
 
 router.get("/",
     verifyToken,
-    authorizeRoles([UserRoles.SuperAdmin]),
+    authorizeRoles([UserRoles.SuperAdmin, UserRoles.TenantAdmin, UserRoles.BranchManager, UserRoles.Teacher]),
     getAllBatches);
 
 router.get("/:tenantId",

@@ -5,6 +5,7 @@ import { IClassSessionDto } from "../types/class-session.type";
 import ApiError from "../utils/apiError";
 import { generatePaginationOptions } from "../utils/pagination.util";
 import { buildClassSessionFilter } from "../utils/base-filter.util";
+import { IResponseList } from "../types/response.type";
 
 class ClassSessionService {
     private async hasTimeConflict(
@@ -26,30 +27,6 @@ class ClassSessionService {
 
         const conflictingSession = await classSessionRepository.findOne(query);
         return !!conflictingSession;
-    }
-
-    public async create(data: IClassSessionDto): Promise<IClassSessionDocument> {
-        const isConflict = await this.hasTimeConflict(data.batchId, data.startTime, data.endTime);
-
-        if (isConflict) throw ApiError.conflict("Another class is already scheduled during this time.");
-
-        const classSession = await classSessionRepository.create(data);
-        if (!classSession) throw ApiError.internal("Failed to create new class session.");
-        return classSession;
-    }
-
-    public async update(classId: string, data: Partial<IClassSessionDocument>): Promise<IClassSessionDocument> {
-        const classSession = await classSessionRepository.findById(classId);
-        if (!classSession) throw ApiError.notFound("Class did not find with this Id.");
-
-        const id = new mongoose.Types.ObjectId(classId);
-        const isConflict = await this.hasTimeConflict(classSession.batchId, classSession.startTime, classSession.endTime, id);
-
-        if (isConflict) throw ApiError.conflict("Another class is already scheduled during this time.");
-
-        const updatedClassSession = await classSessionRepository.model.findByIdAndUpdate(classId, data, { new: true });
-        if (!updatedClassSession) throw ApiError.internal("Failed to update the class session.");
-        return updatedClassSession;
     }
 
     public async getbyId(classId: string) {
@@ -163,9 +140,11 @@ class ClassSessionService {
                 $project: {
                     title: 1,
                     startTime: 1,
+                    tenantId: 1,
+                    subjectId: 1,
                     endTime: 1,
                     isLive: 1,
-                    meetLink: 1,
+                    streamLink: 1,
                     createdAt: 1,
                     updatedAt: 1,
                     teacher: 1,
@@ -182,14 +161,41 @@ class ClassSessionService {
         return classSession[0];
     }
 
-    public async getAll(filter: Record<string, any>) {
+    public async create(data: IClassSessionDto): Promise<IClassSessionDocument> {
+        const isConflict = await this.hasTimeConflict(data.batchId, data.startTime, data.endTime);
+
+        if (isConflict) throw ApiError.conflict("Another class is already scheduled during this time.");
+
+        const classSession = await classSessionRepository.create(data);
+        if (!classSession) throw ApiError.internal("Failed to create new class session.");
+        const classId = String(classSession._id);
+        const response = await this.getbyId(classId)
+        return response;
+    }
+
+    public async update(classId: string, data: Partial<IClassSessionDocument>): Promise<IClassSessionDocument> {
+        const classSession = await classSessionRepository.findById(classId);
+        if (!classSession) throw ApiError.notFound("Class did not find with this Id.");
+
+        const id = new mongoose.Types.ObjectId(classId);
+        const isConflict = await this.hasTimeConflict(classSession.batchId, classSession.startTime, classSession.endTime, id);
+        if (isConflict) throw ApiError.conflict("Another class is already scheduled during this time.");
+
+        await classSessionRepository.model.findByIdAndUpdate(classId, data, { new: true });
+        const response = await this.getbyId(classId)
+        return response;
+    }
+
+    public async getAll(filter: Record<string, any>): Promise<IResponseList<any>> {
         const filterQuery = buildClassSessionFilter(filter);
         const paginationOptions = generatePaginationOptions(filter);
         const { skip, limit, sort } = paginationOptions;
 
-        const isValidStudentId = filter.studentId && mongoose.Types.ObjectId.isValid(filter.studentId);
+        const isValidStudentId =
+            filter.studentId && mongoose.Types.ObjectId.isValid(filter.studentId);
 
-        if (filter.studentId && !isValidStudentId) throw ApiError.badRequest("Student id is required.");
+        if (filter.studentId && !isValidStudentId)
+            throw ApiError.badRequest("Student id is required.");
 
         const pipeline: PipelineStage[] = [
             {
@@ -197,27 +203,31 @@ class ClassSessionService {
             },
             {
                 $lookup: {
-                    from: 'batches',
-                    let: { batchId: '$batchId' },
+                    from: "batches",
+                    let: { batchId: "$batchId" },
                     pipeline: [
                         {
                             $match: {
-                                $expr: { $eq: ['$_id', '$$batchId'] },
+                                $expr: { $eq: ["$_id", "$$batchId"] },
                                 ...(isValidStudentId && {
                                     studentIds: {
-                                        $in: [new mongoose.Types.ObjectId(filter.studentId as string)],
+                                        $in: [
+                                            new mongoose.Types.ObjectId(
+                                                filter.studentId as string
+                                            ),
+                                        ],
                                     },
                                 }),
                             },
                         },
                         {
                             $lookup: {
-                                from: 'courses',
-                                let: { courseId: '$courseId' },
+                                from: "courses",
+                                let: { courseId: "$courseId" },
                                 pipeline: [
                                     {
                                         $match: {
-                                            $expr: { $eq: ['$_id', '$$courseId'] },
+                                            $expr: { $eq: ["$_id", "$$courseId"] },
                                         },
                                     },
                                     {
@@ -227,40 +237,40 @@ class ClassSessionService {
                                         },
                                     },
                                 ],
-                                as: 'course',
+                                as: "course",
                             },
                         },
                         {
                             $unwind: {
-                                path: '$course',
+                                path: "$course",
                                 preserveNullAndEmptyArrays: true,
                             },
                         },
                         {
                             $project: {
                                 _id: 1,
-                                courseId: '$course._id',
-                                courseName: '$course.name',
+                                courseId: "$course._id",
+                                courseName: "$course.name",
                             },
                         },
                     ],
-                    as: 'batch',
+                    as: "batch",
                 },
             },
             {
                 $unwind: {
-                    path: '$batch',
-                    preserveNullAndEmptyArrays: false, // Exclude sessions with no matching batch
+                    path: "$batch",
+                    preserveNullAndEmptyArrays: false,
                 },
             },
             {
                 $lookup: {
-                    from: 'users',
-                    let: { teacherId: '$teacherId' },
+                    from: "users",
+                    let: { teacherId: "$teacherId" },
                     pipeline: [
                         {
                             $match: {
-                                $expr: { $eq: ['$_id', '$$teacherId'] },
+                                $expr: { $eq: ["$_id", "$$teacherId"] },
                             },
                         },
                         {
@@ -270,12 +280,12 @@ class ClassSessionService {
                             },
                         },
                     ],
-                    as: 'teacher',
+                    as: "teacher",
                 },
             },
             {
                 $unwind: {
-                    path: '$teacher',
+                    path: "$teacher",
                     preserveNullAndEmptyArrays: true,
                 },
             },
@@ -283,33 +293,53 @@ class ClassSessionService {
                 $project: {
                     title: 1,
                     startTime: 1,
+                    tenantId: 1,
+                    subjectId: 1,
                     endTime: 1,
                     isLive: 1,
-                    meetLink: 1,
+                    streamLink: 1,
                     createdAt: 1,
                     updatedAt: 1,
                     teacher: 1,
                     batch: 1,
                 },
             },
-            { $sort: sort },
-            { $skip: skip },
-            { $limit: limit },
+            {
+                $facet: {
+                    metadata: [
+                        { $count: "total" } // count all records after filter
+                    ],
+                    records: [
+                        { $sort: sort },
+                        { $skip: skip },
+                        { $limit: limit }
+                    ]
+                }
+            },
+            {
+                $project: {
+                    total: { $ifNull: [{ $arrayElemAt: ["$metadata.total", 0] }, 0] },
+                    records: 1
+                }
+            }
         ];
 
-        const classSession = await classSessionRepository.model.aggregate(pipeline).exec();
+        const result = await classSessionRepository.model.aggregate(pipeline).exec();
 
-        if (!classSession || classSession.length === 0) {
-            throw ApiError.notFound('No class session found.');
+        if (!result || result.length === 0 || result[0].total === 0) {
+            throw ApiError.notFound("No class session found.");
         }
 
-        return classSession;
+        return {
+            total: result[0].total,
+            records: result[0].records
+        };
     }
 
-    public async delete(id: string, tenantId: Types.ObjectId): Promise<boolean> {
+    public async delete(id: string, tenantId: Types.ObjectId): Promise<string> {
         const isDeleted = await classSessionRepository.delete(id, tenantId);
         if (!isDeleted) throw ApiError.internal("Failed to delete class session.");
-        return true;
+        return id;
     }
 
     public async hardDelete(id: string, tenantId: Types.ObjectId): Promise<boolean> {

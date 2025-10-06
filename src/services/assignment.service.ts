@@ -51,7 +51,7 @@ class AssignmentService {
         return updatedAssignment;
     }
 
-    public async getAssignments(): Promise<any> {
+    public async getAssignments(studentId?: string): Promise<any> {
         const batchPipeline: PipelineStage[] = [
             {
                 $lookup: {
@@ -135,9 +135,48 @@ class AssignmentService {
             { $unwind: { path: "$teacher", preserveNullAndEmptyArrays: true } },
         ];
 
+        const submittedAssignmentPipeline: PipelineStage[] =
+            studentId
+                ? [
+                    {
+                        $lookup: {
+                            from: "submittedassignments",
+                            let: { assignmentId: "$_id" },
+                            pipeline: [
+                                {
+                                    $match: {
+                                        $expr: {
+                                            $and: [
+                                                { $eq: ["$assignmentId", "$$assignmentId"] },
+                                                { $eq: ["$studentId", new mongoose.Types.ObjectId(studentId)] },
+                                                { $eq: ["$status", true] },
+                                                { $ne: ["$isDeleted", true] },
+                                            ],
+                                        },
+                                    },
+                                },
+                                {
+                                    $project: {
+                                        progress: 1,
+                                    }
+                                }
+                            ],
+                            as: "submittedAssignment",
+                        },
+                    },
+                    {
+                        $unwind: {
+                            path: "$submittedAssignment",
+                            preserveNullAndEmptyArrays: true,
+                        },
+                    },
+                ]
+                : [];
+
         const pipeline: PipelineStage[] = [
             ...batchPipeline,
             ...teacherPipeline,
+            ...submittedAssignmentPipeline,
             {
                 $project: {
                     _id: 1,
@@ -152,6 +191,7 @@ class AssignmentService {
                         id: "$teacher._id",
                         name: "$teacher.name",
                     },
+                    progress: "$submittedAssignment.progress",
                     createdAt: 1,
                     updatedAt: 1,
                 },
